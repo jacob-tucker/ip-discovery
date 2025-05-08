@@ -79,19 +79,18 @@ export default function IPPage({ params }: IPPageProps) {
                 </div>
               </div>
 
-              <div className="flex-1 p-3">
-                <div className="flex flex-wrap items-start justify-between gap-1 mb-1">
-                  <h1 className="text-xl font-bold">{ip.title}</h1>
-                  <div className="flex gap-1 text-xs">
-                    <span className="bg-accentPurple/10 text-accentPurple px-2 py-0.5 rounded-full">
+              <div className="flex-1 p-4">
+                <div>
+                  <div className="flex justify-between items-start">
+                    <h1 className="text-xl font-bold">{ip.title}</h1>
+                    <span className="bg-accentPurple/10 text-accentPurple text-xs px-2 py-0.5 rounded-full">
                       {ip.ipType}
                     </span>
                   </div>
+                  <p className="text-xs text-textMuted mt-1 mb-4 max-w-2xl">
+                    {ip.description}
+                  </p>
                 </div>
-
-                <p className="text-xs text-textMuted mb-2 line-clamp-2">
-                  {ip.description}
-                </p>
 
                 <IPStats ip={ip} />
               </div>
