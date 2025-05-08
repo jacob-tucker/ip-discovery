@@ -1,0 +1,102 @@
+[
+  {
+    "id": "royalty-1",
+    "ipId": "Ippy",
+    "fromAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "amount": 50,
+    "usdAmount": 2.5,
+    "timestamp": 1694532120000,
+    "blockNumber": 17382901,
+    "transactionHash": "0x8a32d2a38e13c4039a5c9f3036f31dba3bef191a6c28570e37763a26c4657b2c"
+  },
+  {
+    "id": "royalty-2",
+    "ipId": "Ippy",
+    "fromAddress": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+    "amount": 35,
+    "usdAmount": 1.75,
+    "timestamp": 1694447320000,
+    "blockNumber": 17380823,
+    "transactionHash": "0x3c25450f0e6f49c8f1def4f195c2b6dd5ee297fb0d42865e9ec56b2117f21fd1"
+  },
+  {
+    "id": "royalty-3",
+    "ipId": "Ippy",
+    "fromAddress": "0xf14E5aC125Bfe8f0A732E58c9CCf24cef9Ed62f5",
+    "amount": 25,
+    "usdAmount": 1.25,
+    "timestamp": 1694362020000,
+    "blockNumber": 17378781,
+    "transactionHash": "0x57a9cd481a29cd3f75632726e00141b7e2bd3489c3a06e9d44eec539582f075c"
+  },
+  {
+    "id": "royalty-4",
+    "ipId": "Battle Wolf",
+    "fromAddress": "0x4E9C65eb6A96Bc5697C7A8579794C79e8eaE0d18",
+    "amount": 30,
+    "usdAmount": 1.5,
+    "timestamp": 1694273820000,
+    "blockNumber": 17376245,
+    "transactionHash": "0xe89a9b5c3e1c7a69391c2fe66b2c0cd6b4c9b1f5a4a0ea75e4e1798f1742f56d"
+  },
+  {
+    "id": "royalty-5",
+    "ipId": "Sunset Horizons",
+    "fromAddress": "0xCdc9Fb32F11E075A4CdF4c835Fd8a24b1Ec6bDCd",
+    "amount": 20,
+    "usdAmount": 1.0,
+    "timestamp": 1694184220000,
+    "blockNumber": 17373892,
+    "transactionHash": "0xf29f6d2a9e27b45113a485e41b76f79e5cdd30ca07aadcd2317d4d7095ef4eba"
+  },
+  {
+    "id": "royalty-6",
+    "ipId": "Sunset Horizons",
+    "fromAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "amount": 40,
+    "usdAmount": 2.0,
+    "timestamp": 1694100420000,
+    "blockNumber": 17371567,
+    "transactionHash": "0x12d45fbe8f0a732e58c9ccf24cef9ed62f5ac125bfee297fb0d42865e9ec56b2"
+  },
+  {
+    "id": "royalty-7",
+    "ipId": "Digital Dreams",
+    "fromAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "amount": 35,
+    "usdAmount": 1.75,
+    "timestamp": 1694015220000,
+    "blockNumber": 17369287,
+    "transactionHash": "0xf9cd481a29cd3f75632726e00141b7e2bd3489c3a06e9d44eec539582f075c57"
+  },
+  {
+    "id": "royalty-8",
+    "ipId": "Digital Dreams",
+    "fromAddress": "0x0A098Eda01Ce92ff4A4CCb7A4f91d3Ea245CA4Cf",
+    "amount": 15,
+    "usdAmount": 0.75,
+    "timestamp": 1693928820000,
+    "blockNumber": 17366921,
+    "transactionHash": "0xb9b1f5a4a0ea75e4e1798f1742f56de89a9b5c3e1c7a69391c2fe66b2c0cd6b4"
+  },
+  {
+    "id": "royalty-9",
+    "ipId": "Symphony of Stars",
+    "fromAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "amount": 50,
+    "usdAmount": 2.5,
+    "timestamp": 1693840620000,
+    "blockNumber": 17364512,
+    "transactionHash": "0x9b1f5a4a0ea75e4e1798f1742f56de89a9b5c3e1c7a69391c2fe66b2c0cd6b4c"
+  },
+  {
+    "id": "royalty-10",
+    "ipId": "Symphony of Stars",
+    "fromAddress": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+    "amount": 22,
+    "usdAmount": 1.1,
+    "timestamp": 1693753020000,
+    "blockNumber": 17362233,
+    "transactionHash": "0xc9b1f5a4a0ea75e4e1798f1742f56de89a9b5c3e1c7a69391c2fe66b2c0cd6b4"
+  }
+]

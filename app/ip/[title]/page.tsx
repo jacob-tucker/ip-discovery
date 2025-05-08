@@ -16,6 +16,7 @@ import Header from "@/components/Header";
 import IPDetails from "@/components/IPDetails";
 import IPStats from "@/components/IPStats";
 import IPLicenses from "@/components/IPLicenses";
+import IPRoyalties from "@/components/IPRoyalties";
 import Footer from "@/components/Footer";
 import { getIPAssetByTitle } from "@/lib/data";
 import MediaRenderer from "@/components/MediaRenderer";
@@ -111,6 +112,9 @@ export default function IPPage({ params }: IPPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
               <IPDetails ip={ip} />
+              <div className="mt-4">
+                <IPRoyalties ip={ip} />
+              </div>
             </div>
 
             <div className="md:col-span-2">
