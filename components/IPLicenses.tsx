@@ -240,11 +240,21 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                       <LicenseTermItem
                         label="Attribution"
                         value={
-                          license.terms.commercialAttribution
-                            ? "Required"
-                            : "Not Required"
+                          license.offchainTerms !== undefined &&
+                          license.offchainTerms.attribution !== undefined
+                            ? license.offchainTerms.attribution
+                              ? "Required"
+                              : "Not Required"
+                            : license.terms.commercialAttribution
+                              ? "Required"
+                              : "Not Required"
                         }
-                        positive={!license.terms.commercialAttribution}
+                        positive={
+                          license.offchainTerms !== undefined &&
+                          license.offchainTerms.attribution !== undefined
+                            ? !license.offchainTerms.attribution
+                            : !license.terms.commercialAttribution
+                        }
                       />
 
                       {/* Display AI Learning Models permission if off-chain terms are available */}
@@ -261,61 +271,80 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                       )}
                     </div>
 
-                    <div className="flex flex-wrap gap-1 mb-1">
-                      {/* Territory */}
-                      <span className="text-xs bg-accentPurple/10 text-accentPurple px-2 py-0.5 rounded-full flex items-center">
-                        <Globe className="h-3 w-3 mr-1" />
-                        {license.offchainTerms &&
-                        license.offchainTerms.territory &&
-                        license.offchainTerms.territory.length > 0
-                          ? license.offchainTerms.territory.join(", ")
-                          : "Global"}
-                      </span>
-
-                      {/* Channels of Distribution */}
-                      {license.offchainTerms &&
-                      license.offchainTerms.channelsOfDistribution &&
-                      license.offchainTerms.channelsOfDistribution.length >
-                        0 ? (
-                        license.offchainTerms.channelsOfDistribution.map(
-                          (channel) => (
-                            <span
-                              key={channel}
-                              className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full"
-                            >
-                              {channel}
-                            </span>
-                          )
-                        )
-                      ) : (
-                        <span className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full">
-                          All Channels
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Content Standards */}
-                    {license.offchainTerms &&
-                      license.offchainTerms.contentStandards &&
-                      license.offchainTerms.contentStandards.length > 0 && (
-                        <div className="mt-2">
-                          <p className="text-xs text-textMuted mb-1">
-                            Content Standards:
+                    {/* Compact organized sections with inline headers */}
+                    <div className="mt-2 space-y-1.5">
+                      {/* Territory and Channels on the same row */}
+                      <div className="grid grid-cols-2 gap-1">
+                        {/* Territory */}
+                        <div>
+                          <p className="text-xs text-textMuted font-medium mb-0.5 flex items-center">
+                            <Globe className="h-3 w-3 mr-1" /> Territory:
                           </p>
                           <div className="flex flex-wrap gap-1">
-                            {license.offchainTerms.contentStandards.map(
-                              (standard) => (
-                                <span
-                                  key={standard}
-                                  className="text-xs bg-accentOrange/10 text-accentOrange px-2 py-0.5 rounded-full"
-                                >
-                                  {standard}
-                                </span>
+                            <span className="text-xs bg-accentPurple/10 text-accentPurple px-2 py-0.5 rounded-full">
+                              {license.offchainTerms &&
+                              license.offchainTerms.territory &&
+                              license.offchainTerms.territory.length > 0
+                                ? license.offchainTerms.territory.join(", ")
+                                : "Global"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Channels */}
+                        <div>
+                          <p className="text-xs text-textMuted font-medium mb-0.5 flex items-center">
+                            <ArrowRight className="h-3 w-3 mr-1" />{" "}
+                            Distribution:
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {license.offchainTerms &&
+                            license.offchainTerms.channelsOfDistribution &&
+                            license.offchainTerms.channelsOfDistribution
+                              .length > 0 ? (
+                              license.offchainTerms.channelsOfDistribution.map(
+                                (channel) => (
+                                  <span
+                                    key={channel}
+                                    className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full"
+                                  >
+                                    {channel}
+                                  </span>
+                                )
                               )
+                            ) : (
+                              <span className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full">
+                                All Channels
+                              </span>
                             )}
                           </div>
                         </div>
-                      )}
+                      </div>
+
+                      {/* Content Standards on its own row but more compact */}
+                      {license.offchainTerms &&
+                        license.offchainTerms.contentStandards &&
+                        license.offchainTerms.contentStandards.length > 0 && (
+                          <div>
+                            <p className="text-xs text-textMuted font-medium mb-0.5 flex items-center">
+                              <ShieldCheck className="h-3 w-3 mr-1" /> Content
+                              Standards:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {license.offchainTerms.contentStandards.map(
+                                (standard) => (
+                                  <span
+                                    key={standard}
+                                    className="text-xs bg-accentOrange/10 text-accentOrange px-2 py-0.5 rounded-full"
+                                  >
+                                    {standard}
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+                    </div>
 
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50">
                       <button
