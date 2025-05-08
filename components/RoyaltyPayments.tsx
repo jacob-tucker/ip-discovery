@@ -1,23 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Coins, Clock, ChevronRight, ExternalLink, User } from "lucide-react";
-import { IPAsset } from "@/types/ip";
-import { getAllRoyaltyPayments } from "@/lib/data";
+import { getAllRoyaltyPayments, getIPAssetById } from "@/lib/data";
 import { RoyaltyPayment } from "@/types/royalty";
+import { IPAsset } from "@/types/ip";
 
-interface IPRoyaltiesProps {
-  ip: IPAsset;
+interface RoyaltyPaymentsProps {
+  limit?: number;
+  isHomepage?: boolean;
 }
 
-export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
+export default function RoyaltyPayments({
+  limit = 4,
+  isHomepage = false,
+}: RoyaltyPaymentsProps) {
   const [showAll, setShowAll] = useState(false);
-  const limit = showAll ? undefined : 3;
+  const displayLimit = showAll ? undefined : limit;
+  const [ipTitles, setIpTitles] = useState<Record<string, string>>({});
 
-  // Use the available getAllRoyaltyPayments function and filter in the component
+  // Fetch royalty payments
   const {
     data: allRoyaltyPayments = [],
     isLoading,
@@ -27,10 +32,40 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
     queryFn: getAllRoyaltyPayments,
   });
 
-  // Filter payments for this specific IP using ipId
-  const royaltyPayments = allRoyaltyPayments
-    .filter((payment) => payment.ipId === ip.ipId)
-    .slice(0, limit ? limit : undefined);
+  // Get the payments limited to the display limit
+  const royaltyPayments = allRoyaltyPayments.slice(0, displayLimit);
+
+  // Fetch IP titles for each unique ipId
+  useEffect(() => {
+    const fetchIpTitles = async () => {
+      if (!royaltyPayments.length) return;
+
+      const uniqueIpIds = Array.from(
+        new Set(royaltyPayments.map((p) => p.ipId))
+      );
+      const titles: Record<string, string> = {};
+
+      for (const ipId of uniqueIpIds) {
+        try {
+          const ipAsset = await getIPAssetById(ipId);
+          if (ipAsset) {
+            titles[ipId] = ipAsset.title;
+          } else {
+            titles[ipId] = "Unknown IP";
+          }
+        } catch (err) {
+          console.error(`Error fetching IP title for ${ipId}:`, err);
+          titles[ipId] = "Unknown IP";
+        }
+      }
+
+      setIpTitles(titles);
+    };
+
+    if (royaltyPayments.length > 0) {
+      fetchIpTitles();
+    }
+  }, [JSON.stringify(royaltyPayments.map((p) => p.ipId))]);
 
   // Format address for display
   const formatAddress = (address: string) => {
@@ -69,12 +104,14 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
   if (isLoading) {
     return (
       <div className="bg-cardBg rounded-md border border-border">
-        <div className="p-3 border-b border-border">
-          <div className="flex items-center">
-            <Coins className="h-4 w-4 mr-1 text-accentGreen" />
-            <h3 className="text-sm font-semibold">Royalty Payments</h3>
+        {!isHomepage && (
+          <div className="p-3 border-b border-border">
+            <div className="flex items-center">
+              <Coins className="h-4 w-4 mr-1 text-accentGreen" />
+              <h3 className="text-sm font-semibold">Recent Royalty Payments</h3>
+            </div>
           </div>
-        </div>
+        )}
         <div className="p-3 flex items-center justify-center">
           <Clock className="h-4 w-4 animate-pulse text-accentGreen" />
           <span className="ml-2 text-sm text-textMuted">
@@ -88,12 +125,14 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
   if (error) {
     return (
       <div className="bg-cardBg rounded-md border border-border">
-        <div className="p-3 border-b border-border">
-          <div className="flex items-center">
-            <Coins className="h-4 w-4 mr-1 text-accentGreen" />
-            <h3 className="text-sm font-semibold">Royalty Payments</h3>
+        {!isHomepage && (
+          <div className="p-3 border-b border-border">
+            <div className="flex items-center">
+              <Coins className="h-4 w-4 mr-1 text-accentGreen" />
+              <h3 className="text-sm font-semibold">Recent Royalty Payments</h3>
+            </div>
           </div>
-        </div>
+        )}
         <div className="p-3 text-center text-sm text-textMuted">
           Error loading royalty data
         </div>
@@ -104,14 +143,16 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
   if (royaltyPayments.length === 0) {
     return (
       <div className="bg-cardBg rounded-md border border-border">
-        <div className="p-3 border-b border-border">
-          <div className="flex items-center">
-            <Coins className="h-4 w-4 mr-1 text-accentGreen" />
-            <h3 className="text-sm font-semibold">Royalty Payments</h3>
+        {!isHomepage && (
+          <div className="p-3 border-b border-border">
+            <div className="flex items-center">
+              <Coins className="h-4 w-4 mr-1 text-accentGreen" />
+              <h3 className="text-sm font-semibold">Recent Royalty Payments</h3>
+            </div>
           </div>
-        </div>
+        )}
         <div className="p-3 text-center text-sm text-textMuted">
-          No royalty payments found for this IP
+          No royalty payments found
         </div>
       </div>
     );
@@ -119,20 +160,22 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
 
   return (
     <div className="bg-cardBg rounded-md border border-border">
-      <div className="p-3 border-b border-border">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center">
-            <Coins className="h-4 w-4 mr-1 text-accentGreen" />
-            <h3 className="text-sm font-semibold">Royalty Payments</h3>
+      {!isHomepage && (
+        <div className="p-3 border-b border-border">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center">
+              <Coins className="h-4 w-4 mr-1 text-accentGreen" />
+              <h3 className="text-sm font-semibold">Recent Royalty Payments</h3>
+            </div>
+            <span className="text-xs text-textMuted">
+              {allRoyaltyPayments.length} payments
+            </span>
           </div>
-          <span className="text-xs text-textMuted">
-            {royaltyPayments.length} payments
-          </span>
+          <p className="text-xs text-textMuted">
+            Latest royalty payments across all IPs
+          </p>
         </div>
-        <p className="text-xs text-textMuted">
-          Latest royalty payments received for this IP
-        </p>
-      </div>
+      )}
 
       <div className="p-2">
         <AnimatePresence>
@@ -145,6 +188,15 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
               transition={{ delay: index * 0.05 }}
               className="mb-2 bg-background p-2 rounded-md border border-border hover:border-accentGreen/30 transition-colors group"
             >
+              {/* IP Title - Only for global royalty payments list */}
+              <div className="mb-1">
+                <Link href={`/ip/${payment.ipId}`} className="inline-block">
+                  <span className="text-xs font-semibold hover:text-accentGreen transition-colors">
+                    {ipTitles[payment.ipId] || formatAddress(payment.ipId)}
+                  </span>
+                </Link>
+              </div>
+
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center">
                   <User className="h-3 w-3 mr-1 text-textMuted" />
@@ -186,7 +238,7 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
           ))}
         </AnimatePresence>
 
-        {royaltyPayments.length > 0 && (
+        {allRoyaltyPayments.length > limit && (
           <button
             onClick={toggleViewAll}
             className="w-full mt-1 py-1.5 px-3 text-xs flex items-center justify-center text-accentGreen border border-border rounded-md hover:bg-accentGreen/5 transition-colors"

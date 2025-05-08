@@ -13,10 +13,21 @@ import Link from "next/link";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: ipAssets = [], isLoading } = useQuery({
+  const {
+    data: ipAssets = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["ipAssets"],
     queryFn: getIPAssets,
+    staleTime: 60 * 1000, // 1 minute
+    retry: 1, // Retry once
   });
+
+  // Log error if there is one
+  if (error) {
+    console.error("Error in home page data fetching:", error);
+  }
 
   const filteredAssets = ipAssets.filter(
     (ip: IPAsset) =>

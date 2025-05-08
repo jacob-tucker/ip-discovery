@@ -1,5 +1,6 @@
 [
   {
+    "ipId": "0xB1D831271A68Db5c18c8F0B69327446f7C8D0A42",
     "title": "Ippy",
     "description": "Official mascot of Story.",
     "createdAt": "1728401700",
@@ -27,6 +28,7 @@
     "ipType": "Character"
   },
   {
+    "ipId": "midnight-marriage-002",
     "title": "Midnight Marriage",
     "description": "This is a house-style song generated on suno.",
     "createdAt": "1740005219",
@@ -49,72 +51,5 @@
     "mediaUrl": "https://cdn1.suno.ai/dcd3076f-3aa5-400b-ba5d-87d30f27c311.mp3",
     "mediaHash": "0xb52a44f53b2485ba772bd4857a443e1fb942cf5dda73c870e2d2238ecd607aee",
     "mediaType": "audio/mpeg"
-  },
-  {
-    "title": "Digital Symphony",
-    "description": "An AI-generated artwork representing the harmony of technology and creativity.",
-    "createdAt": "1726401700",
-    "image": "https://ipfs.io/ipfs/QmSamy4zqP91X42k6wS7kLJQVzuYJuW2EN94couPaq82A9",
-    "imageHash": "0x31937ba9d821cb0306c7f1a1a2cc5a257509f228ea6abccc9af1a67dd754af6f",
-    "mediaUrl": "https://ipfs.io/ipfs/QmSamy4zqP91X42k6wS7kLJQVzuYJuW2EN94couPaq82A9",
-    "mediaHash": "0x31937ba9d821cb0306c7f1a1a2cc5a257509f228ea6abccc9af1a67dd754af6f",
-    "mediaType": "image/jpeg",
-    "creators": [
-      {
-        "name": "Digital Artist Collective",
-        "address": "0x77ee74EE04A0E6d14Ca6C27428B27F3EFd5CD085",
-        "description": "Collaborative AI art studio",
-        "contributionPercent": 100,
-        "socialMedia": [
-          {
-            "platform": "Twitter",
-            "url": "https://twitter.com/digitalartcollective"
-          },
-          { "platform": "Website", "url": "https://digitalartcollective.io" }
-        ]
-      }
-    ],
-    "tags": ["AI Art", "Digital", "Symphony", "Technology", "Creativity"],
-    "ipType": "Artwork"
-  },
-  {
-    "title": "Blockchain Beats",
-    "description": "A music album with songs inspired by blockchain technology.",
-    "createdAt": "1725401700",
-    "image": "https://ipfs.io/ipfs/QmSamy4zqP91X42k6wS7kLJQVzuYJuW2EN94couPaq82B1",
-    "imageHash": "0x41937ba9d821cb0306c7f1a1a2cc5a257509f228ea6abccc9af1a67dd754af7e",
-    "mediaUrl": "https://ipfs.io/ipfs/QmSamy4zqP91X42k6wS7kLJQVzuYJuW2EN94couPaq82B1",
-    "mediaHash": "0x41937ba9d821cb0306c7f1a1a2cc5a257509f228ea6abccc9af1a67dd754af7e",
-    "mediaType": "audio/mp3",
-    "creators": [
-      {
-        "name": "CryptoSounds",
-        "address": "0x87ee74EE04A0E6d14Ca6C27428B27F3EFd5CD086",
-        "description": "Web3 music producer",
-        "contributionPercent": 70,
-        "socialMedia": [
-          { "platform": "Twitter", "url": "https://twitter.com/cryptosounds" },
-          {
-            "platform": "SoundCloud",
-            "url": "https://soundcloud.com/cryptosounds"
-          }
-        ]
-      },
-      {
-        "name": "BlockchainDJ",
-        "address": "0x97ee74EE04A0E6d14Ca6C27428B27F3EFd5CD087",
-        "description": "Crypto music artist",
-        "contributionPercent": 30,
-        "socialMedia": [
-          { "platform": "Twitter", "url": "https://twitter.com/blockchaindj" },
-          {
-            "platform": "Spotify",
-            "url": "https://spotify.com/artist/blockchaindj"
-          }
-        ]
-      }
-    ],
-    "tags": ["Music", "Blockchain", "Album", "Crypto", "Web3"],
-    "ipType": "Music"
   }
 ]

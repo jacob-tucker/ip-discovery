@@ -19,7 +19,7 @@ export default function IPCard({ ip }: IPCardProps) {
       whileHover={{ scale: 1.02 }}
       className="card hover:shadow-lg transition-shadow"
     >
-      <Link href={`/ip/${encodeURIComponent(ip.title)}`}>
+      <Link href={`/ip/${encodeURIComponent(ip.ipId)}`}>
         <div className="flex space-x-4">
           <div className="relative h-24 w-24">
             <Image

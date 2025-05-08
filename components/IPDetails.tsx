@@ -161,7 +161,9 @@ export default function IPDetails({ ip }: IPDetailsProps) {
               <span>View Asset</span>
             </a>
             <a
-              href={`https://example.com/metadata/${ip.mediaHash}`}
+              href={
+                ip.metadataUri || `https://example.com/metadata/${ip.mediaHash}`
+              }
               target="_blank"
               rel="noopener noreferrer"
               className="text-[10px] py-1.5 px-1 rounded flex items-center justify-center border border-border/40 hover:border-accentPurple/30 hover:bg-accentPurple/5 transition-all group"
@@ -170,7 +172,7 @@ export default function IPDetails({ ip }: IPDetailsProps) {
               <span>View Metadata</span>
             </a>
             <a
-              href={`https://explorer.storyprotocol.xyz/ip/${ip.mediaHash}`}
+              href={`https://explorer.story.foundation/ipa/${ip.ipId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[10px] py-1.5 px-1 rounded flex items-center justify-center border border-border/40 hover:border-accentPurple/30 hover:bg-accentPurple/5 transition-all group"
@@ -179,7 +181,7 @@ export default function IPDetails({ ip }: IPDetailsProps) {
               <span>Open in Explorer</span>
             </a>
             <a
-              href={`https://portal.storyprotocol.xyz/ip/${encodeURIComponent(ip.title)}`}
+              href={`https://portal.story.foundation/assets/${ip.ipId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[10px] py-1.5 px-1 rounded flex items-center justify-center border border-border/40 hover:border-accentPurple/30 hover:bg-accentPurple/5 transition-all group"

@@ -12,6 +12,7 @@ export interface Creator {
 }
 
 export interface IPAsset {
+  ipId: string;
   title: string;
   description: string;
   createdAt: string;
@@ -22,4 +23,5 @@ export interface IPAsset {
   mediaType: string;
   creators: Creator[];
   ipType: string;
+  metadataUri?: string;
 }

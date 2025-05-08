@@ -18,28 +18,30 @@ import IPStats from "@/components/IPStats";
 import IPLicenses from "@/components/IPLicenses";
 import IPRoyalties from "@/components/IPRoyalties";
 import Footer from "@/components/Footer";
-import { getIPAssetByTitle } from "@/lib/data";
+import { getStoryIPAssetById } from "@/lib/data";
 import MediaRenderer from "@/components/MediaRenderer";
 import AudioPlayer from "@/components/AudioPlayer";
 
 interface IPPageProps {
   params: Promise<{
-    title: string;
+    ipId: string;
   }>;
 }
 
 export default function IPPage({ params }: IPPageProps) {
   const unwrappedParams = use(params);
-  const decodedTitle = decodeURIComponent(unwrappedParams.title);
+  const decodedIpId = decodeURIComponent(unwrappedParams.ipId);
 
   const {
     data: ip,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["ipAsset", decodedTitle],
-    queryFn: () => getIPAssetByTitle(decodedTitle),
+    queryKey: ["ipAsset", decodedIpId],
+    queryFn: () => getStoryIPAssetById(decodedIpId),
   });
+
+  console.log("ip", ip);
 
   if (isLoading) {
     return (

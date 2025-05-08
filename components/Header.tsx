@@ -173,8 +173,8 @@ export default function Header() {
               <div className="max-h-80 overflow-y-auto">
                 {searchResults.map((result) => (
                   <Link
-                    href={`/ip/${encodeURIComponent(result.title)}`}
-                    key={result.title}
+                    href={`/ip/${encodeURIComponent(result.ipId)}`}
+                    key={result.ipId}
                     className="flex items-center px-3 py-2 hover:bg-cardBg transition-colors cursor-pointer"
                     onClick={() => {
                       setSearchQuery("");

@@ -1,7 +1,7 @@
 [
   {
     "id": "royalty-1",
-    "ipId": "Ippy",
+    "ipId": "0xB1D831271A68Db5c18c8F0B69327446f7C8D0A42",
     "fromAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
     "amount": 50,
     "usdAmount": 2.5,
@@ -11,7 +11,7 @@
   },
   {
     "id": "royalty-2",
-    "ipId": "Ippy",
+    "ipId": "0xB1D831271A68Db5c18c8F0B69327446f7C8D0A42",
     "fromAddress": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
     "amount": 35,
     "usdAmount": 1.75,
@@ -21,7 +21,7 @@
   },
   {
     "id": "royalty-3",
-    "ipId": "Ippy",
+    "ipId": "0xB1D831271A68Db5c18c8F0B69327446f7C8D0A42",
     "fromAddress": "0xf14E5aC125Bfe8f0A732E58c9CCf24cef9Ed62f5",
     "amount": 25,
     "usdAmount": 1.25,
@@ -31,7 +31,7 @@
   },
   {
     "id": "royalty-4",
-    "ipId": "Battle Wolf",
+    "ipId": "blockchain-beats-004",
     "fromAddress": "0x4E9C65eb6A96Bc5697C7A8579794C79e8eaE0d18",
     "amount": 30,
     "usdAmount": 1.5,
@@ -41,7 +41,7 @@
   },
   {
     "id": "royalty-5",
-    "ipId": "Sunset Horizons",
+    "ipId": "digital-symphony-003",
     "fromAddress": "0xCdc9Fb32F11E075A4CdF4c835Fd8a24b1Ec6bDCd",
     "amount": 20,
     "usdAmount": 1.0,
@@ -51,7 +51,7 @@
   },
   {
     "id": "royalty-6",
-    "ipId": "Sunset Horizons",
+    "ipId": "digital-symphony-003",
     "fromAddress": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
     "amount": 40,
     "usdAmount": 2.0,
@@ -61,7 +61,7 @@
   },
   {
     "id": "royalty-7",
-    "ipId": "Digital Dreams",
+    "ipId": "midnight-marriage-002",
     "fromAddress": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
     "amount": 35,
     "usdAmount": 1.75,
@@ -71,7 +71,7 @@
   },
   {
     "id": "royalty-8",
-    "ipId": "Digital Dreams",
+    "ipId": "midnight-marriage-002",
     "fromAddress": "0x0A098Eda01Ce92ff4A4CCb7A4f91d3Ea245CA4Cf",
     "amount": 15,
     "usdAmount": 0.75,
@@ -81,7 +81,7 @@
   },
   {
     "id": "royalty-9",
-    "ipId": "Symphony of Stars",
+    "ipId": "0xB1D831271A68Db5c18c8F0B69327446f7C8D0A42",
     "fromAddress": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
     "amount": 50,
     "usdAmount": 2.5,
@@ -91,7 +91,7 @@
   },
   {
     "id": "royalty-10",
-    "ipId": "Symphony of Stars",
+    "ipId": "blockchain-beats-004",
     "fromAddress": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
     "amount": 22,
     "usdAmount": 1.1,
