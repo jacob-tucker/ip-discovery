@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Scroll,
@@ -15,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import { IPAsset } from "@/types/ip";
+import { getTokenPrice, formatUSD } from "@/lib/tokenPrice";
 
 interface IPLicensesProps {
   ip: IPAsset;
@@ -46,81 +47,106 @@ interface License {
 export default function IPLicenses({ ip }: IPLicensesProps) {
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
   const [expandedLicense, setExpandedLicense] = useState<string | null>(null);
+  const [licenses, setLicenses] = useState<License[]>([]);
+  const [tokenPrice, setTokenPrice] = useState<number | null>(null);
 
-  // Mock license data
-  const licenses: License[] = [
-    {
-      id: "license-1",
-      name: "Basic License",
-      price: 50,
-      usdPrice: 2.5,
-      description: "Basic non-commercial use of IP",
-      terms: {
-        transferable: true,
-        defaultMintingFee: 50,
-        expiration: "1 year",
-        commercialUse: false,
-        commercialAttribution: true,
-        commercialRevShare: 0,
-        derivativesAllowed: true,
-        derivativesAttribution: true,
-        derivativesApproval: false,
-        derivativesReciprocal: true,
-        territory: "Global",
-        channelsOfDistribution: ["Digital", "Social Media"],
-        contentStandards: ["No-Hate", "Suitable-for-All-Ages"],
+  // Fetch the current token price
+  useEffect(() => {
+    const fetchTokenPrice = async () => {
+      try {
+        const price = await getTokenPrice();
+        setTokenPrice(price);
+      } catch (error) {
+        console.error("Failed to fetch token price:", error);
+      }
+    };
+
+    fetchTokenPrice();
+  }, []);
+
+  // Initialize licenses with updated USD prices when token price is available
+  useEffect(() => {
+    // Base license data
+    const baseLicenses: Omit<License, "usdPrice">[] = [
+      {
+        id: "license-1",
+        name: "Basic License",
+        price: 50,
+        description: "Basic non-commercial use of IP",
+        terms: {
+          transferable: true,
+          defaultMintingFee: 50,
+          expiration: "1 year",
+          commercialUse: false,
+          commercialAttribution: true,
+          commercialRevShare: 0,
+          derivativesAllowed: true,
+          derivativesAttribution: true,
+          derivativesApproval: false,
+          derivativesReciprocal: true,
+          territory: "Global",
+          channelsOfDistribution: ["Digital", "Social Media"],
+          contentStandards: ["No-Hate", "Suitable-for-All-Ages"],
+        },
       },
-    },
-    {
-      id: "license-2",
-      name: "Commercial License",
-      price: 500,
-      usdPrice: 25,
-      description: "Full commercial use with revenue sharing",
-      terms: {
-        transferable: true,
-        defaultMintingFee: 500,
-        expiration: "2 years",
-        commercialUse: true,
-        commercialAttribution: true,
-        commercialRevShare: 10,
-        derivativesAllowed: true,
-        derivativesAttribution: true,
-        derivativesApproval: true,
-        derivativesReciprocal: false,
-        territory: "Global",
-        channelsOfDistribution: [
-          "Digital",
-          "Physical",
-          "Social Media",
-          "Print",
-        ],
-        contentStandards: ["No-Hate", "No-Pornography"],
+      {
+        id: "license-2",
+        name: "Commercial License",
+        price: 500,
+        description: "Full commercial use with revenue sharing",
+        terms: {
+          transferable: true,
+          defaultMintingFee: 500,
+          expiration: "2 years",
+          commercialUse: true,
+          commercialAttribution: true,
+          commercialRevShare: 10,
+          derivativesAllowed: true,
+          derivativesAttribution: true,
+          derivativesApproval: true,
+          derivativesReciprocal: false,
+          territory: "Global",
+          channelsOfDistribution: [
+            "Digital",
+            "Physical",
+            "Social Media",
+            "Print",
+          ],
+          contentStandards: ["No-Hate", "No-Pornography"],
+        },
       },
-    },
-    {
-      id: "license-3",
-      name: "Enterprise License",
-      price: 2000,
-      usdPrice: 100,
-      description: "Unlimited commercial use with minimal restrictions",
-      terms: {
-        transferable: true,
-        defaultMintingFee: 2000,
-        expiration: "5 years",
-        commercialUse: true,
-        commercialAttribution: false,
-        commercialRevShare: 5,
-        derivativesAllowed: true,
-        derivativesAttribution: false,
-        derivativesApproval: false,
-        derivativesReciprocal: false,
-        territory: "Global",
-        channelsOfDistribution: ["All Channels"],
-        contentStandards: ["No-Hate"],
+      {
+        id: "license-3",
+        name: "Enterprise License",
+        price: 2000,
+        description: "Unlimited commercial use with minimal restrictions",
+        terms: {
+          transferable: true,
+          defaultMintingFee: 2000,
+          expiration: "5 years",
+          commercialUse: true,
+          commercialAttribution: false,
+          commercialRevShare: 5,
+          derivativesAllowed: true,
+          derivativesAttribution: false,
+          derivativesApproval: false,
+          derivativesReciprocal: false,
+          territory: "Global",
+          channelsOfDistribution: ["All Channels"],
+          contentStandards: ["No-Hate"],
+        },
       },
-    },
-  ];
+    ];
+
+    // Calculate USD prices if token price is available
+    if (tokenPrice !== null) {
+      const licensesWithUsdPrices = baseLicenses.map((license) => ({
+        ...license,
+        usdPrice: license.price * tokenPrice,
+      }));
+      setLicenses(licensesWithUsdPrices);
+    }
+  }, [tokenPrice]);
 
   const handleLicenseSelect = (licenseId: string) => {
     setSelectedLicense(licenseId === selectedLicense ? null : licenseId);
@@ -135,6 +161,18 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
     console.log(`Minting license ${licenseId}`);
     alert(`License ${licenseId} would be minted in a real app`);
   };
+
+  // Show loading state if licenses aren't loaded yet
+  if (licenses.length === 0) {
+    return (
+      <div className="bg-cardBg rounded-md border border-border p-4">
+        <div className="flex items-center justify-center">
+          <Scroll className="h-4 w-4 mr-2 text-accentPurple animate-pulse" />
+          <span className="text-sm text-textMuted">Loading licenses...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-cardBg rounded-md border border-border">
@@ -194,7 +232,7 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                 <div className="text-right mr-3">
                   <p className="text-xs font-medium">{license.price} $IP</p>
                   <p className="text-xs text-textMuted">
-                    (~${license.usdPrice})
+                    (~{formatUSD(license.usdPrice)})
                   </p>
                 </div>
                 <button

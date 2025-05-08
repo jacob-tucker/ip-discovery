@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Coins, Clock, ChevronRight, ExternalLink, User } from "lucide-react";
 import { IPAsset } from "@/types/ip";
-import { getAllRoyaltyPayments } from "@/lib/data";
+import { getRoyaltyPaymentsForIP } from "@/lib/data";
 import { RoyaltyPayment } from "@/types/royalty";
+import { formatUSD } from "@/lib/tokenPrice";
 
 interface IPRoyaltiesProps {
   ip: IPAsset;
@@ -15,30 +16,40 @@ interface IPRoyaltiesProps {
 
 export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
   const [showAll, setShowAll] = useState(false);
-  const limit = showAll ? undefined : 3;
 
-  // Use the available getAllRoyaltyPayments function and filter in the component
+  // Fetch all royalty payments at once (no limit)
   const {
     data: allRoyaltyPayments = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["royaltyPayments"],
-    queryFn: getAllRoyaltyPayments,
+    queryKey: ["royaltyPayments", ip.ipId],
+    queryFn: () => getRoyaltyPaymentsForIP(ip.ipId),
+    enabled: !!ip.ipId,
   });
 
-  // Filter payments for this specific IP using ipId
-  const royaltyPayments = allRoyaltyPayments
-    .filter((payment) => payment.ipId === ip.ipId)
-    .slice(0, limit ? limit : undefined);
+  // Apply limit client-side instead of in the API
+  const displayLimit = showAll ? undefined : 3;
+  const royaltyPayments = displayLimit
+    ? allRoyaltyPayments.slice(0, displayLimit)
+    : allRoyaltyPayments;
+
+  console.log(royaltyPayments);
+
+  // Handle click to view all without refetching
+  const toggleViewAll = () => {
+    setShowAll(!showAll);
+  };
 
   // Format address for display
   const formatAddress = (address: string) => {
+    if (!address) return "Unknown";
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
   // Format transaction hash for display
   const formatTxHash = (hash: string) => {
+    if (!hash) return "Unknown";
     return `${hash.substring(0, 6)}...${hash.substring(hash.length - 4)}`;
   };
 
@@ -59,11 +70,6 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  // Handle click to view all
-  const toggleViewAll = () => {
-    setShowAll(!showAll);
   };
 
   if (isLoading) {
@@ -101,7 +107,7 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
     );
   }
 
-  if (royaltyPayments.length === 0) {
+  if (allRoyaltyPayments.length === 0) {
     return (
       <div className="bg-cardBg rounded-md border border-border">
         <div className="p-3 border-b border-border">
@@ -126,7 +132,10 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
             <h3 className="text-sm font-semibold">Royalty Payments</h3>
           </div>
           <span className="text-xs text-textMuted">
-            {royaltyPayments.length} payments
+            {showAll
+              ? allRoyaltyPayments.length
+              : Math.min(3, allRoyaltyPayments.length)}{" "}
+            of {allRoyaltyPayments.length} payments
           </span>
         </div>
         <p className="text-xs text-textMuted">
@@ -158,7 +167,7 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
                     {payment.amount} $IP
                   </span>
                   <span className="hidden sm:inline-block text-xs text-textMuted ml-1">
-                    (${payment.usdAmount.toFixed(2)})
+                    ({formatUSD(payment.usdAmount)})
                   </span>
                 </div>
               </div>
@@ -172,7 +181,7 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
                 </div>
 
                 <Link
-                  href={`https://explorer.storyprotocol.xyz/tx/${payment.transactionHash}`}
+                  href={`https://explorer.story.foundation/tx/${payment.transactionHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   title={`View transaction ${payment.transactionHash}`}
@@ -186,12 +195,15 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
           ))}
         </AnimatePresence>
 
-        {royaltyPayments.length > 0 && (
+        {/* Always show the button if there are any payments */}
+        {allRoyaltyPayments.length > 0 && (
           <button
             onClick={toggleViewAll}
             className="w-full mt-1 py-1.5 px-3 text-xs flex items-center justify-center text-accentGreen border border-border rounded-md hover:bg-accentGreen/5 transition-colors"
           >
-            {showAll ? "Show Less" : "View All Royalty Payments"}
+            {showAll
+              ? "Show Less"
+              : `View All Royalty Payments (${allRoyaltyPayments.length})`}
             <ChevronRight
               className={`h-3 w-3 ml-1 transition-transform ${
                 showAll ? "rotate-90" : ""

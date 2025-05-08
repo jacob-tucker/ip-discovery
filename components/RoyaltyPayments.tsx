@@ -8,6 +8,7 @@ import { Coins, Clock, ChevronRight, ExternalLink, User } from "lucide-react";
 import { getAllRoyaltyPayments, getIPAssetById } from "@/lib/data";
 import { RoyaltyPayment } from "@/types/royalty";
 import { IPAsset } from "@/types/ip";
+import { formatUSD } from "@/lib/tokenPrice";
 
 interface RoyaltyPaymentsProps {
   limit?: number;
@@ -34,6 +35,8 @@ export default function RoyaltyPayments({
 
   // Get the payments limited to the display limit
   const royaltyPayments = allRoyaltyPayments.slice(0, displayLimit);
+
+  console.log("RoyaltyPayments.tsx - royaltyPayments:", royaltyPayments);
 
   // Fetch IP titles for each unique ipId
   useEffect(() => {
@@ -210,7 +213,7 @@ export default function RoyaltyPayments({
                     {payment.amount} $IP
                   </span>
                   <span className="hidden sm:inline-block text-xs text-textMuted ml-1">
-                    (${payment.usdAmount.toFixed(2)})
+                    ({formatUSD(payment.usdAmount)})
                   </span>
                 </div>
               </div>
@@ -224,7 +227,7 @@ export default function RoyaltyPayments({
                 </div>
 
                 <Link
-                  href={`https://explorer.storyprotocol.xyz/tx/${payment.transactionHash}`}
+                  href={`https://storyscan.io/tx/${payment.transactionHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   title={`View transaction ${payment.transactionHash}`}
@@ -243,7 +246,9 @@ export default function RoyaltyPayments({
             onClick={toggleViewAll}
             className="w-full mt-1 py-1.5 px-3 text-xs flex items-center justify-center text-accentGreen border border-border rounded-md hover:bg-accentGreen/5 transition-colors"
           >
-            {showAll ? "Show Less" : "View All Royalty Payments"}
+            {showAll
+              ? "Show Less"
+              : `View All Royalty Payments (${allRoyaltyPayments.length})`}
             <ChevronRight
               className={`h-3 w-3 ml-1 transition-transform ${
                 showAll ? "rotate-90" : ""

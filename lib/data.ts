@@ -54,54 +54,26 @@ export const getStoryIPAssetById = async (
   ipId: string
 ): Promise<IPAsset | null> => {
   try {
-    // Fetch from the Story API
-    const metadata = await getIPAssetMetadataFromStory(ipId);
+    // Fetch from our API endpoint which handles caching
+    const response = await fetch(`/api/ip/${ipId}`, {
+      // Use Next.js cache: 'force-cache' for maximum caching
+      // or use 'no-store' to bypass the cache
+      next: { revalidate: 900 }, // 15 minutes, matching the API's revalidate setting
+    });
 
-    if (!metadata || !metadata.metadataUri) {
-      // No metadata or URI available, fall back to local data
-      return getIPAssetById(ipId);
+    console.log("response", response);
+
+    if (!response.ok) {
+      console.error(`API error: ${response.status} ${response.statusText}`);
+      // No fallback to mock data
+      return null;
     }
 
-    // Store the metadataUri for later use
-    const metadataUri = metadata.metadataUri;
-
-    // Fetch JSON from metadataUri
-    try {
-      const response = await fetch(metadataUri);
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch metadata from URI: ${response.status}`
-        );
-      }
-
-      const metadataJson = await response.json();
-
-      // Return IPAsset with defaults for missing fields
-      return {
-        ipId: ipId,
-        title: metadataJson.title || "Unknown IP",
-        description: metadataJson.description || "No description available",
-        createdAt: metadataJson.createdAt || new Date().toISOString(),
-        image: metadataJson.image || "/placeholder-image.png",
-        imageHash: metadataJson.imageHash || "",
-        mediaUrl:
-          metadataJson.mediaUrl ||
-          metadataJson.image ||
-          "/placeholder-image.png",
-        mediaHash: metadataJson.mediaHash || metadataJson.imageHash || "",
-        mediaType:
-          metadataJson.mediaType || getMediaType(metadataJson.mediaUrl),
-        creators: metadataJson.creators || [],
-        ipType: metadataJson.ipType || "Asset",
-        metadataUri: metadataUri, // Store the metadataUri in the object
-      };
-    } catch (error) {
-      console.error("Error fetching metadata from URI:", error);
-      return getIPAssetById(ipId);
-    }
+    return await response.json();
   } catch (error) {
-    console.error("Error fetching IP asset from Story:", error);
-    return getIPAssetById(ipId);
+    console.error("Error fetching IP asset via API:", error);
+    // No fallback to mock data
+    return null;
   }
 };
 
@@ -132,8 +104,40 @@ export const getRoyaltyPaymentsForIP = async (
   ipId: string,
   limit?: number
 ): Promise<RoyaltyPayment[]> => {
-  const allPayments = await getAllRoyaltyPayments();
-  const ipPayments = allPayments.filter((payment) => payment.ipId === ipId);
+  console.log(
+    "getRoyaltyPaymentsForIP called for IP:",
+    ipId,
+    "with limit:",
+    limit
+  );
 
-  return limit ? ipPayments.slice(0, limit) : ipPayments;
+  try {
+    // Fetch from our API endpoint which handles caching
+    const response = await fetch(`/api/royalties/${ipId}`, {
+      next: { revalidate: 300 }, // 5 minutes, matching the API's revalidate setting
+    });
+
+    console.log(
+      "getRoyaltyPaymentsForIP API response status:",
+      response.status
+    );
+
+    if (!response.ok) {
+      console.error(`API error: ${response.status} ${response.statusText}`);
+      return [];
+    }
+
+    const payments = await response.json();
+    console.log(
+      "getRoyaltyPaymentsForIP data received:",
+      payments.length,
+      "payments"
+    );
+
+    // Apply limit if requested
+    return limit ? payments.slice(0, limit) : payments;
+  } catch (error) {
+    console.error("Error fetching royalty payments via API:", error);
+    return [];
+  }
 };
