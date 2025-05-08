@@ -81,7 +81,7 @@ export default function AudioPlayer({ audioUrl, title }: AudioPlayerProps) {
   };
 
   return (
-    <div className="bg-background rounded-md p-3 border border-border">
+    <div className="bg-background rounded-md p-3 border border-border shadow-sm">
       <audio ref={audioRef} src={audioUrl} preload="metadata" />
 
       <div className="flex flex-col">

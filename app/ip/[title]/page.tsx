@@ -19,6 +19,7 @@ import IPLicenses from "@/components/IPLicenses";
 import Footer from "@/components/Footer";
 import { getIPAssetByTitle } from "@/lib/data";
 import MediaRenderer from "@/components/MediaRenderer";
+import AudioPlayer from "@/components/AudioPlayer";
 
 interface IPPageProps {
   params: Promise<{
@@ -58,6 +59,8 @@ export default function IPPage({ params }: IPPageProps) {
     notFound();
   }
 
+  const isAudio = ip.mediaType.startsWith("audio/");
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -65,8 +68,10 @@ export default function IPPage({ params }: IPPageProps) {
         <div className="container py-4">
           <div className="bg-cardBg rounded-md border border-border overflow-hidden mb-4">
             <div className="flex flex-col md:flex-row">
-              <div className="relative md:w-1/4 lg:w-1/5">
-                <div className="aspect-square relative">
+              <div className="relative md:w-1/4 lg:w-1/5 border-r border-border">
+                <div
+                  className={`${isAudio ? "h-full" : "aspect-square"} relative overflow-hidden`}
+                >
                   <MediaRenderer
                     mediaUrl={ip.mediaUrl}
                     mediaType={ip.mediaType}
@@ -90,6 +95,13 @@ export default function IPPage({ params }: IPPageProps) {
                 </div>
 
                 <IPStats ip={ip} />
+
+                {/* Audio Player shown below stats for audio files */}
+                {isAudio && (
+                  <div className="mt-4 max-w-md">
+                    <AudioPlayer audioUrl={ip.mediaUrl} title={ip.title} />
+                  </div>
+                )}
               </div>
             </div>
           </div>

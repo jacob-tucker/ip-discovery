@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import AudioPlayer from "./AudioPlayer";
 import WaveformPlaceholder from "./WaveformPlaceholder";
 
 interface MediaRendererProps {
@@ -34,31 +33,25 @@ export default function MediaRenderer({
 
   if (isAudio) {
     return (
-      <div className="space-y-4">
-        {/* Show a waveform or album art placeholder for audio */}
-        <div className="relative aspect-square w-full bg-background border border-border rounded-md overflow-hidden">
-          {fallbackImageUrl && !isError ? (
-            <>
-              <Image
-                src={fallbackImageUrl}
-                alt={title}
-                fill
-                className="object-cover"
-                onError={() => setIsError(true)}
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 flex items-end p-2">
-                <div className="text-white text-xs font-medium truncate">
-                  {title}
-                </div>
+      <div className="w-full h-full bg-background">
+        {fallbackImageUrl && !isError ? (
+          <div className="relative w-full h-full">
+            <Image
+              src={fallbackImageUrl}
+              alt={title}
+              fill
+              className="object-cover"
+              onError={() => setIsError(true)}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 flex items-end p-2">
+              <div className="text-white text-xs font-medium truncate">
+                {title}
               </div>
-            </>
-          ) : (
-            <WaveformPlaceholder />
-          )}
-        </div>
-
-        {/* Audio player component */}
-        <AudioPlayer audioUrl={mediaUrl} title={title} />
+            </div>
+          </div>
+        ) : (
+          <WaveformPlaceholder className="w-full h-full" />
+        )}
       </div>
     );
   }

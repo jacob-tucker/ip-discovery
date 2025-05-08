@@ -12,7 +12,7 @@ export default function WaveformPlaceholder({
 
   return (
     <div
-      className={`relative w-full h-full flex items-center justify-center bg-cardBg ${className}`}
+      className={`w-full h-full flex items-center justify-center bg-cardBg ${className}`}
     >
       <div className="absolute inset-0 flex items-center justify-center opacity-20">
         <div className="flex items-end h-[60%] w-[80%] space-x-1">

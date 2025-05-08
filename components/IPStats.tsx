@@ -10,6 +10,10 @@ import {
   Users,
   Shield,
   BarChart,
+  FileType,
+  Music,
+  Video,
+  Image as ImageIcon,
 } from "lucide-react";
 import { IPAsset } from "@/types/ip";
 
@@ -18,6 +22,23 @@ interface IPStatsProps {
 }
 
 export default function IPStats({ ip }: IPStatsProps) {
+  // Format media type for display
+  const formatMediaType = (mediaType: string) => {
+    const [type, format] = mediaType.split("/");
+    return `${format.toUpperCase()}`;
+  };
+
+  // Get media type icon
+  const getMediaTypeIcon = (mediaType: string) => {
+    if (mediaType.startsWith("audio/")) {
+      return <Music className="h-3 w-3 text-accentOrange" />;
+    } else if (mediaType.startsWith("video/")) {
+      return <Video className="h-3 w-3 text-accentGreen" />;
+    } else {
+      return <ImageIcon className="h-3 w-3 text-accentPurple" />;
+    }
+  };
+
   // Group stats into categories for better organization
   const statGroups = [
     {
@@ -36,9 +57,9 @@ export default function IPStats({ ip }: IPStatsProps) {
           icon: <Calendar className="h-3 w-3 text-accentPurple" />,
         },
         {
-          label: "Type",
-          value: ip.ipType,
-          icon: <Globe className="h-3 w-3 text-accentGreen" />,
+          label: "Media Type",
+          value: formatMediaType(ip.mediaType),
+          icon: getMediaTypeIcon(ip.mediaType),
         },
       ],
     },
