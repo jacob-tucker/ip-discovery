@@ -40,6 +40,8 @@ export default function MediaRenderer({
               src={fallbackImageUrl}
               alt={title}
               fill
+              sizes="(max-width: 768px) 100vw, 25vw"
+              priority
               className="object-cover"
               onError={() => setIsError(true)}
             />
@@ -84,6 +86,8 @@ export default function MediaRenderer({
           src={mediaUrl}
           alt={title}
           fill
+          sizes="(max-width: 768px) 100vw, 25vw"
+          priority
           className="object-cover"
           onError={() => setIsError(true)}
         />

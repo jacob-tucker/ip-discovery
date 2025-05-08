@@ -96,7 +96,7 @@ export default function IPStats({ ip }: IPStatsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
       {statGroups.map((group) => (
         <div key={group.title} className="bg-background rounded-md p-2">
           <h4 className="text-xs font-medium text-textMuted mb-2">
@@ -109,7 +109,7 @@ export default function IPStats({ ip }: IPStatsProps) {
                 className="flex items-center justify-between"
               >
                 <div className="flex items-center">
-                  <div className="mr-2 flex-shrink-0 text-textMuted">
+                  <div className="mr-1.5 md:mr-2 flex-shrink-0 text-textMuted">
                     {stat.icon}
                   </div>
                   <p className="text-xs">{stat.label}</p>

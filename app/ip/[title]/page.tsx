@@ -68,9 +68,9 @@ export default function IPPage({ params }: IPPageProps) {
         <div className="container py-4">
           <div className="bg-cardBg rounded-md border border-border overflow-hidden mb-4">
             <div className="flex flex-col md:flex-row">
-              <div className="relative md:w-1/4 lg:w-1/5 border-r border-border">
+              <div className="relative md:w-1/4 lg:w-1/5 md:border-r border-border">
                 <div
-                  className={`${isAudio ? "h-full" : "aspect-square"} relative overflow-hidden`}
+                  className={`${isAudio ? "md:h-full" : "aspect-square"} relative overflow-hidden`}
                 >
                   <MediaRenderer
                     mediaUrl={ip.mediaUrl}
@@ -79,15 +79,18 @@ export default function IPPage({ params }: IPPageProps) {
                     fallbackImageUrl={ip.image}
                   />
                 </div>
+
+                {isAudio && (
+                  <div className="p-3 block md:hidden">
+                    <AudioPlayer audioUrl={ip.mediaUrl} title={ip.title} />
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 p-4">
                 <div>
                   <div className="flex justify-between items-start">
                     <h1 className="text-xl font-bold">{ip.title}</h1>
-                    <span className="bg-accentPurple/10 text-accentPurple text-xs px-2 py-0.5 rounded-full">
-                      {ip.ipType}
-                    </span>
                   </div>
                   <p className="text-xs text-textMuted mt-1 mb-4 max-w-2xl">
                     {ip.description}
@@ -96,9 +99,8 @@ export default function IPPage({ params }: IPPageProps) {
 
                 <IPStats ip={ip} />
 
-                {/* Audio Player shown below stats for audio files */}
                 {isAudio && (
-                  <div className="mt-4 max-w-md">
+                  <div className="mt-4 max-w-md hidden md:block">
                     <AudioPlayer audioUrl={ip.mediaUrl} title={ip.title} />
                   </div>
                 )}
