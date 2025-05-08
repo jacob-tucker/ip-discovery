@@ -21,6 +21,5 @@ export interface IPAsset {
   mediaHash: string;
   mediaType: string;
   creators: Creator[];
-  tags: string[];
   ipType: string;
 }

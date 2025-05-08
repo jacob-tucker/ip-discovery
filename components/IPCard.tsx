@@ -43,13 +43,6 @@ export default function IPCard({ ip }: IPCardProps) {
                 {ip.ipType}
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {ip.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="tag">
-                  {tag}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </Link>

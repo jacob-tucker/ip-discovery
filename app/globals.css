@@ -1,6 +1,19 @@
+@import "./styles/audio-player.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --accent-purple: #7c3aed;
+  --accent-orange: #f97316;
+  --accent-green: #10b981;
+  --border: #e2e8f0;
+  --background: #f8fafc;
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --card-bg: #ffffff;
+}
 
 body {
   @apply bg-background text-textPrimary font-sans;

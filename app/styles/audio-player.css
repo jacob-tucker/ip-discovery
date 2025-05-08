@@ -1,0 +1,43 @@
+/* Audio Player Range Input Styling */
+
+/* Remove default styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  height: 4px;
+}
+
+/* Chrome, Safari, Edge, Opera */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -4px;
+  background-color: var(--accent-purple);
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-thumb {
+  background-color: var(--accent-purple);
+  height: 12px;
+  width: 12px;
+  border: none;
+  border-radius: 50%;
+}
+
+/* Focus styles */
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+}
+
+input[type="range"]:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+}

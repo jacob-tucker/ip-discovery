@@ -19,10 +19,7 @@ export default function Home() {
   const filteredAssets = ipAssets.filter(
     (ip: IPAsset) =>
       ip.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ip.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ip.tags.some((tag) =>
-        tag.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      ip.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import { use } from "react";
-import { motion } from "framer-motion";
 import {
   FileText,
   Calendar,
@@ -19,7 +18,7 @@ import IPStats from "@/components/IPStats";
 import IPLicenses from "@/components/IPLicenses";
 import Footer from "@/components/Footer";
 import { getIPAssetByTitle } from "@/lib/data";
-import Image from "next/image";
+import MediaRenderer from "@/components/MediaRenderer";
 
 interface IPPageProps {
   params: Promise<{
@@ -68,13 +67,11 @@ export default function IPPage({ params }: IPPageProps) {
             <div className="flex flex-col md:flex-row">
               <div className="relative md:w-1/4 lg:w-1/5">
                 <div className="aspect-square relative">
-                  <Image
-                    src={ip.image}
-                    alt={ip.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 25vw, 20vw"
-                    priority
+                  <MediaRenderer
+                    mediaUrl={ip.mediaUrl}
+                    mediaType={ip.mediaType}
+                    title={ip.title}
+                    fallbackImageUrl={ip.image}
                   />
                 </div>
               </div>
