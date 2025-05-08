@@ -11,6 +11,7 @@ import {
   Link as LinkIcon,
   ExternalLink,
   Clock,
+  Image as ImageIcon,
 } from "lucide-react";
 import Header from "@/components/Header";
 import IPDetails from "@/components/IPDetails";
@@ -27,6 +28,9 @@ interface IPPageProps {
     ipId: string;
   }>;
 }
+
+// Skeleton animation class for loading states
+const skeletonClass = "animate-pulse bg-gray-200 rounded";
 
 export default function IPPage({ params }: IPPageProps) {
   const unwrappedParams = use(params);
@@ -45,12 +49,141 @@ export default function IPPage({ params }: IPPageProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-background">
         <Header />
-        <div className="container py-4 text-center flex-grow">
-          <div className="inline-flex items-center justify-center space-x-2">
-            <Clock className="h-4 w-4 text-accentOrange" />
-            <p className="text-textMuted text-sm">Loading IP details...</p>
+        <div className="container py-4 flex-grow">
+          {/* Skeleton for the main IP card */}
+          <div className="bg-cardBg rounded-md border border-border overflow-hidden mb-4">
+            <div className="flex flex-col md:flex-row">
+              {/* Skeleton for the media */}
+              <div className="relative md:w-1/4 lg:w-1/5 md:border-r border-border">
+                <div className="aspect-square relative overflow-hidden">
+                  <div className={`${skeletonClass} h-full w-full`}>
+                    <ImageIcon className="h-8 w-8 text-gray-300 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Skeleton for the IP details */}
+              <div className="flex-1 p-4">
+                <div>
+                  <div className="flex justify-between items-start">
+                    <div className={`${skeletonClass} h-7 w-48 mb-2`}></div>
+                  </div>
+                  <div
+                    className={`${skeletonClass} h-4 w-full max-w-2xl mb-2`}
+                  ></div>
+                  <div
+                    className={`${skeletonClass} h-4 w-5/6 max-w-2xl mb-4`}
+                  ></div>
+                </div>
+
+                {/* Skeleton for IP Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
+                  {[1, 2, 3].map((group) => (
+                    <div key={group} className="bg-background rounded-md p-2">
+                      <div className={`${skeletonClass} h-3 w-16 mb-2`}></div>
+                      <div className="space-y-2">
+                        {[1, 2].map((stat) => (
+                          <div
+                            key={stat}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center">
+                              <div
+                                className={`${skeletonClass} h-3 w-3 mr-1.5 md:mr-2 rounded-full`}
+                              ></div>
+                              <div
+                                className={`${skeletonClass} h-3 w-14`}
+                              ></div>
+                            </div>
+                            <div className={`${skeletonClass} h-3 w-8`}></div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Skeleton for the bottom sections */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              {/* Skeleton for IP Details */}
+              <div className="bg-cardBg rounded-md border border-border mb-4">
+                <div className="p-3 border-b border-border">
+                  <div className={`${skeletonClass} h-4 w-24 mb-1`}></div>
+                </div>
+                <div className="p-3">
+                  {[1, 2].map((item) => (
+                    <div key={item} className="mb-3">
+                      <div
+                        className={`${skeletonClass} h-16 w-full rounded-md mb-2`}
+                      ></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Skeleton for Royalties */}
+              <div className="bg-cardBg rounded-md border border-border">
+                <div className="p-3 border-b border-border">
+                  <div className={`${skeletonClass} h-4 w-32 mb-1`}></div>
+                </div>
+                <div className="p-2">
+                  {[1, 2, 3].map((item) => (
+                    <div
+                      key={item}
+                      className="bg-background rounded-md p-2 mb-2"
+                    >
+                      <div className={`${skeletonClass} h-4 w-full mb-2`}></div>
+                      <div className={`${skeletonClass} h-3 w-2/3 mb-1`}></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Skeleton for Licenses */}
+            <div className="md:col-span-2">
+              <div className="bg-cardBg rounded-md border border-border">
+                <div className="p-3 border-b border-border">
+                  <div className={`${skeletonClass} h-4 w-36 mb-1`}></div>
+                  <div className={`${skeletonClass} h-3 w-48`}></div>
+                </div>
+                <div className="p-2">
+                  {[1, 2].map((item) => (
+                    <div
+                      key={item}
+                      className="border border-border rounded-md mb-2 overflow-hidden"
+                    >
+                      <div className="p-2 bg-background">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div
+                              className={`${skeletonClass} h-4 w-4 rounded-full mr-2`}
+                            ></div>
+                            <div>
+                              <div
+                                className={`${skeletonClass} h-3 w-24 mb-1`}
+                              ></div>
+                              <div
+                                className={`${skeletonClass} h-2 w-36`}
+                              ></div>
+                            </div>
+                          </div>
+                          <div
+                            className={`${skeletonClass} h-6 w-16 rounded-full`}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <Footer />

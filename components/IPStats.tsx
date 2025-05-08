@@ -24,6 +24,9 @@ interface IPStatsProps {
   ip: IPAsset;
 }
 
+// Skeleton animation class for loading states
+const skeletonClass = "animate-pulse bg-gray-200 rounded";
+
 export default function IPStats({ ip }: IPStatsProps) {
   const [derivativeCount, setDerivativeCount] = useState<number | null>(null);
   const [disputeCount, setDisputeCount] = useState<number | null>(null);
@@ -99,11 +102,13 @@ export default function IPStats({ ip }: IPStatsProps) {
             }
           ),
           icon: <Calendar className="h-3 w-3 text-accentPurple" />,
+          loading: false,
         },
         {
           label: "Media Type",
           value: formatMediaType(ip.mediaType),
           icon: getMediaTypeIcon(ip.mediaType),
+          loading: false,
         },
       ],
     },
@@ -114,11 +119,13 @@ export default function IPStats({ ip }: IPStatsProps) {
           label: "Views",
           value: 325,
           icon: <Eye className="h-3 w-3 text-accentOrange" />,
+          loading: false,
         },
         {
           label: "Derivatives",
-          value: isLoadingDerivatives ? "Loading..." : derivativeCount || 0,
+          value: derivativeCount !== null ? derivativeCount : 0,
           icon: <GitBranch className="h-3 w-3 text-accentGreen" />,
+          loading: isLoadingDerivatives,
         },
       ],
     },
@@ -127,8 +134,9 @@ export default function IPStats({ ip }: IPStatsProps) {
       stats: [
         {
           label: "Raised",
-          value: isLoadingDisputes ? "Loading..." : disputeCount || 0,
+          value: disputeCount !== null ? disputeCount : 0,
           icon: <AlertTriangle className="h-3 w-3 text-accentOrange" />,
+          loading: isLoadingDisputes,
         },
       ],
     },
@@ -153,7 +161,11 @@ export default function IPStats({ ip }: IPStatsProps) {
                   </div>
                   <p className="text-xs">{stat.label}</p>
                 </div>
-                <p className="text-xs font-semibold">{stat.value}</p>
+                {stat.loading ? (
+                  <div className={`h-3 w-8 ${skeletonClass}`}></div>
+                ) : (
+                  <p className="text-xs font-semibold">{stat.value}</p>
+                )}
               </div>
             ))}
           </div>
