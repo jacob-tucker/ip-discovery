@@ -26,6 +26,20 @@ export interface LicenseTerms {
   uri: string;
 }
 
+// Additional fields from license URI (off-chain terms)
+export interface OffchainTerms {
+  territory: string[];
+  channelsOfDistribution: string[];
+  attribution: boolean;
+  contentStandards: string[];
+  sublicensable: boolean;
+  aiLearningModels: boolean;
+  restrictionOnCrossPlatformUse: boolean;
+  governingLaw: string;
+  additionalParameters: Record<string, any>;
+  PILUri: string;
+}
+
 export interface DetailedLicenseTerms {
   disabled: boolean;
   id: string;
@@ -38,6 +52,9 @@ export interface DetailedLicenseTerms {
   usdPrice?: number;
   displayName?: string;
   description?: string;
+
+  // Off-chain terms from URI (fetched at the API layer)
+  offchainTerms?: OffchainTerms;
 }
 
 export interface DetailedLicenseTermsResponse {

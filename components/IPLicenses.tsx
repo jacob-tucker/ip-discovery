@@ -13,6 +13,8 @@ import {
   CornerRightDown,
   ShieldCheck,
   FileText,
+  Globe,
+  Cpu,
 } from "lucide-react";
 import { IPAsset } from "@/types/ip";
 import { DetailedLicenseTerms } from "@/types/license";
@@ -244,19 +246,76 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                         }
                         positive={!license.terms.commercialAttribution}
                       />
+
+                      {/* Display AI Learning Models permission if off-chain terms are available */}
+                      {license.offchainTerms && (
+                        <LicenseTermItem
+                          label="AI Training"
+                          value={
+                            license.offchainTerms.aiLearningModels
+                              ? "Allowed"
+                              : "Not Allowed"
+                          }
+                          positive={license.offchainTerms.aiLearningModels}
+                        />
+                      )}
                     </div>
 
                     <div className="flex flex-wrap gap-1 mb-1">
-                      <span className="text-xs bg-accentPurple/10 text-accentPurple px-2 py-0.5 rounded-full">
-                        Global
+                      {/* Territory */}
+                      <span className="text-xs bg-accentPurple/10 text-accentPurple px-2 py-0.5 rounded-full flex items-center">
+                        <Globe className="h-3 w-3 mr-1" />
+                        {license.offchainTerms &&
+                        license.offchainTerms.territory &&
+                        license.offchainTerms.territory.length > 0
+                          ? license.offchainTerms.territory.join(", ")
+                          : "Global"}
                       </span>
-                      <span className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full">
-                        Digital
-                      </span>
-                      <span className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full">
-                        Physical
-                      </span>
+
+                      {/* Channels of Distribution */}
+                      {license.offchainTerms &&
+                      license.offchainTerms.channelsOfDistribution &&
+                      license.offchainTerms.channelsOfDistribution.length >
+                        0 ? (
+                        license.offchainTerms.channelsOfDistribution.map(
+                          (channel) => (
+                            <span
+                              key={channel}
+                              className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full"
+                            >
+                              {channel}
+                            </span>
+                          )
+                        )
+                      ) : (
+                        <span className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full">
+                          All Channels
+                        </span>
+                      )}
                     </div>
+
+                    {/* Content Standards */}
+                    {license.offchainTerms &&
+                      license.offchainTerms.contentStandards &&
+                      license.offchainTerms.contentStandards.length > 0 && (
+                        <div className="mt-2">
+                          <p className="text-xs text-textMuted mb-1">
+                            Content Standards:
+                          </p>
+                          <div className="flex flex-wrap gap-1">
+                            {license.offchainTerms.contentStandards.map(
+                              (standard) => (
+                                <span
+                                  key={standard}
+                                  className="text-xs bg-accentOrange/10 text-accentOrange px-2 py-0.5 rounded-full"
+                                >
+                                  {standard}
+                                </span>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50">
                       <button
