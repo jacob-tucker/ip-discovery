@@ -94,26 +94,59 @@ export default function Header() {
           <div
             className={`
             flex items-center transition-all duration-200 ease-in-out rounded-full
-            ${isSearchFocused ? "bg-background shadow-md ring-1 ring-accentOrange/30" : "bg-transparent border border-border/20"}
+            border shadow-sm overflow-hidden
+            ${
+              isSearchFocused
+                ? "bg-background shadow-md ring-2 ring-accentOrange/20 border-accentOrange"
+                : "bg-background/60 backdrop-blur-sm border-border/40 hover:border-border/80"
+            }
           `}
           >
-            <Search
+            <div
               className={`
-              h-4 w-4 ml-3 transition-colors duration-200
-              ${isSearchFocused ? "text-accentOrange" : "text-textMuted"}
-            `}
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              placeholder="Search IPs..."
-              className={`
-                w-full py-2 pl-2 pr-4 text-sm bg-transparent border-none
-                focus:outline-none focus:ring-0 placeholder:text-textMuted/70
+                ml-3 transition-all duration-300 ease-in-out
+                ${isSearchFocused ? "text-accentOrange scale-110" : "text-textMuted"}
+                ${searchQuery ? "rotate-12" : ""}
               `}
-            />
+              onClick={() => {
+                const inputElement = searchRef.current?.querySelector("input");
+                if (inputElement) inputElement.focus();
+              }}
+            >
+              <Search
+                className={`
+                h-4 w-4 transform transition-all duration-300
+                ${searchQuery ? "rotate-12" : ""}
+                ${isSearchFocused ? "animate-pulse" : ""}
+              `}
+              />
+            </div>
+
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                placeholder="Search IPs..."
+                className={`
+                  w-full py-2 pl-2 pr-4 text-sm bg-transparent 
+                  border-0 border-none outline-none ring-0
+                  appearance-none focus:appearance-none
+                  focus:outline-none focus:ring-0 focus:shadow-none
+                  focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none
+                  placeholder:text-textMuted/70 transition-all duration-200
+                `}
+                style={{
+                  WebkitTapHighlightColor: "transparent",
+                  WebkitAppearance: "none",
+                  MozAppearance: "none",
+                  outline: "none",
+                }}
+              />
+              <div className="absolute inset-0 pointer-events-none"></div>
+            </div>
+
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
@@ -127,8 +160,15 @@ export default function Header() {
           {/* Search Results Dropdown */}
           {isSearchFocused && searchResults.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 py-2 bg-background rounded-md shadow-lg border border-border/20 z-50 animate-in fade-in-50 duration-150">
-              <div className="text-xs text-textMuted px-3 pb-1 uppercase tracking-wider">
-                Results
+              <div className="flex items-center justify-between px-3 pb-1">
+                <div className="text-xs text-textMuted uppercase tracking-wider">
+                  Results
+                </div>
+                {searchQuery && (
+                  <div className="text-xs bg-accentOrange/10 text-accentOrange px-1.5 py-0.5 rounded-full">
+                    {searchResults.length}
+                  </div>
+                )}
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {searchResults.map((result) => (

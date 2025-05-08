@@ -149,72 +149,61 @@ export default function IPDetails({ ip }: IPDetailsProps) {
           </div>
         </div>
 
-        <div className="bg-background rounded-md p-2 space-y-1">
-          {/* Original Asset Link */}
-          <a
-            href={ip.mediaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between text-xs p-1 hover:bg-accentPurple/5 rounded"
-          >
-            <div className="flex items-center">
-              <FileText className="h-3 w-3 mr-2 text-accentPurple" />
-              <span>View Original Asset</span>
-            </div>
-            <ExternalLink className="h-3 w-3 text-textMuted" />
-          </a>
+        <div className="bg-background rounded-md p-2">
+          <div className="grid grid-cols-2 gap-1.5 mb-2">
+            <a
+              href={ip.mediaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] py-1.5 px-1 rounded flex items-center justify-center border border-border/40 hover:border-accentPurple/30 hover:bg-accentPurple/5 transition-all group"
+            >
+              <ExternalLink className="h-2.5 w-2.5 mr-1.5 text-accentPurple opacity-70 group-hover:opacity-100" />
+              <span>View Asset</span>
+            </a>
+            <a
+              href={`https://example.com/metadata/${ip.mediaHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] py-1.5 px-1 rounded flex items-center justify-center border border-border/40 hover:border-accentPurple/30 hover:bg-accentPurple/5 transition-all group"
+            >
+              <ExternalLink className="h-2.5 w-2.5 mr-1.5 text-accentPurple opacity-70 group-hover:opacity-100" />
+              <span>View Metadata</span>
+            </a>
+            <a
+              href={`https://explorer.storyprotocol.xyz/ip/${ip.mediaHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] py-1.5 px-1 rounded flex items-center justify-center border border-border/40 hover:border-accentPurple/30 hover:bg-accentPurple/5 transition-all group"
+            >
+              <ExternalLink className="h-2.5 w-2.5 mr-1.5 text-accentPurple opacity-70 group-hover:opacity-100" />
+              <span>Open in Explorer</span>
+            </a>
+            <a
+              href={`https://portal.storyprotocol.xyz/ip/${encodeURIComponent(ip.title)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] py-1.5 px-1 rounded flex items-center justify-center border border-border/40 hover:border-accentPurple/30 hover:bg-accentPurple/5 transition-all group"
+            >
+              <ExternalLink className="h-2.5 w-2.5 mr-1.5 text-accentPurple opacity-70 group-hover:opacity-100" />
+              <span>Open in Portal</span>
+            </a>
+          </div>
 
-          {/* Metadata Link */}
-          <a
-            href={`https://example.com/metadata/${ip.mediaHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between text-xs p-1 hover:bg-accentPurple/5 rounded"
-          >
+          <div className="text-xs text-textMuted mt-1 flex items-center justify-between border-t border-border/30 pt-2">
+            <span className="text-[10px]">Asset Hash:</span>
             <div className="flex items-center">
-              <FileJson className="h-3 w-3 mr-2 text-accentOrange" />
-              <span>View IP Metadata</span>
-            </div>
-            <ExternalLink className="h-3 w-3 text-textMuted" />
-          </a>
-
-          {/* Explorer Link */}
-          <a
-            href={`https://explorer.storyprotocol.xyz/ip/${ip.mediaHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between text-xs p-1 hover:bg-accentPurple/5 rounded"
-          >
-            <div className="flex items-center">
-              <Search className="h-3 w-3 mr-2 text-accentGreen" />
-              <span>View in Explorer</span>
-            </div>
-            <ExternalLink className="h-3 w-3 text-textMuted" />
-          </a>
-
-          {/* IP Portal Link */}
-          <a
-            href={`https://portal.storyprotocol.xyz/ip/${encodeURIComponent(ip.title)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between text-xs p-1 hover:bg-accentPurple/5 rounded"
-          >
-            <div className="flex items-center">
-              <Database className="h-3 w-3 mr-2 text-accentPurple" />
-              <span>Open in IP Portal</span>
-            </div>
-            <ExternalLink className="h-3 w-3 text-textMuted" />
-          </a>
-
-          <div className="text-xs text-textMuted px-1 mt-2">
-            <div className="flex justify-between items-center">
-              <span>Asset Hash:</span>
               <span
-                className="font-mono text-[10px] truncate max-w-[150px]"
+                className="font-mono text-[9px] truncate max-w-[100px]"
                 title={ip.mediaHash}
               >
                 {ip.mediaHash.substring(0, 10)}...
               </span>
+              <button
+                onClick={() => copyToClipboard(ip.mediaHash)}
+                className="ml-1 text-textMuted hover:text-accentPurple transition-colors"
+              >
+                <Copy className="h-2.5 w-2.5" />
+              </button>
             </div>
           </div>
         </div>
