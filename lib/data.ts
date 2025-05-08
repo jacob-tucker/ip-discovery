@@ -1,5 +1,6 @@
 import { IPAsset } from "@/types/ip";
 import { RoyaltyPayment } from "@/types/royalty";
+import { DetailedLicenseTerms } from "@/types/license";
 import ipAssets from "@/data/ip-assets.json";
 import royaltyPayments from "@/data/royalty-payments.json";
 
@@ -138,6 +139,39 @@ export const getRoyaltyPaymentsForIP = async (
     return limit ? payments.slice(0, limit) : payments;
   } catch (error) {
     console.error("Error fetching royalty payments via API:", error);
+    return [];
+  }
+};
+
+/**
+ * Get license terms for a specific IP asset
+ * @param ipId IP asset ID
+ * @returns Array of license terms
+ */
+export const getLicensesForIP = async (
+  ipId: string
+): Promise<DetailedLicenseTerms[]> => {
+  console.log("getLicensesForIP called for IP:", ipId);
+
+  try {
+    // Fetch from our API endpoint which handles caching
+    const response = await fetch(`/api/licenses/${ipId}`, {
+      next: { revalidate: 900 }, // 15 minutes, matching the API's revalidate setting
+    });
+
+    console.log("getLicensesForIP API response status:", response.status);
+
+    if (!response.ok) {
+      console.error(`API error: ${response.status} ${response.statusText}`);
+      return [];
+    }
+
+    const licenses = await response.json();
+    console.log("getLicensesForIP data received:", licenses.length, "licenses");
+
+    return licenses;
+  } catch (error) {
+    console.error("Error fetching licenses via API:", error);
     return [];
   }
 };

@@ -3,6 +3,8 @@
  * Uses StoryScan API to fetch real-time price data
  */
 
+import { formatEther } from "viem";
+
 // Cache for IP token price to avoid multiple fetches in a short time
 let cachedTokenPrice: { price: number; timestamp: number } | null = null;
 const PRICE_CACHE_TTL = 60 * 1000; // 1 minute cache for price
@@ -42,14 +44,19 @@ export async function getTokenPrice(): Promise<number> {
 }
 
 /**
- * Converts a token amount from wei to $IP tokens
+ * Converts a wei amount to token amount (in $IP)
  * @param amountInWei Amount in wei (as string or number)
  * @returns Amount in $IP tokens
  */
 export function weiToTokens(amountInWei: string | number): number {
-  const amountInWeiNum =
-    typeof amountInWei === "string" ? parseInt(amountInWei) : amountInWei;
-  return amountInWeiNum / 1e18;
+  // Handle different input types
+  const weiValue =
+    typeof amountInWei === "string"
+      ? BigInt(amountInWei)
+      : BigInt(amountInWei.toString());
+
+  // Use viem's formatEther for proper wei to ether conversion
+  return parseFloat(formatEther(weiValue));
 }
 
 /**

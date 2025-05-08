@@ -15,138 +15,38 @@ import {
   FileText,
 } from "lucide-react";
 import { IPAsset } from "@/types/ip";
-import { getTokenPrice, formatUSD } from "@/lib/tokenPrice";
+import { DetailedLicenseTerms } from "@/types/license";
+import { getLicensesForIP } from "@/lib/data";
+import { formatExpiration } from "@/lib/licenses";
+import { formatUSD } from "@/lib/tokenPrice";
+import { formatEther } from "viem";
 
 interface IPLicensesProps {
   ip: IPAsset;
 }
 
-interface License {
-  id: string;
-  name: string;
-  price: number;
-  usdPrice: number;
-  description: string;
-  terms: {
-    transferable: boolean;
-    defaultMintingFee: number;
-    expiration: string;
-    commercialUse: boolean;
-    commercialAttribution: boolean;
-    commercialRevShare: number;
-    derivativesAllowed: boolean;
-    derivativesAttribution: boolean;
-    derivativesApproval: boolean;
-    derivativesReciprocal: boolean;
-    territory: string;
-    channelsOfDistribution: string[];
-    contentStandards: string[];
-  };
-}
-
 export default function IPLicenses({ ip }: IPLicensesProps) {
   const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
   const [expandedLicense, setExpandedLicense] = useState<string | null>(null);
-  const [licenses, setLicenses] = useState<License[]>([]);
-  const [tokenPrice, setTokenPrice] = useState<number | null>(null);
+  const [licenses, setLicenses] = useState<DetailedLicenseTerms[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch the current token price
+  // Fetch real license data for the IP
   useEffect(() => {
-    const fetchTokenPrice = async () => {
+    const fetchLicenses = async () => {
       try {
-        const price = await getTokenPrice();
-        setTokenPrice(price);
+        setIsLoading(true);
+        const data = await getLicensesForIP(ip.ipId);
+        setLicenses(data);
       } catch (error) {
-        console.error("Failed to fetch token price:", error);
+        console.error("Failed to fetch licenses:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchTokenPrice();
-  }, []);
-
-  // Initialize licenses with updated USD prices when token price is available
-  useEffect(() => {
-    // Base license data
-    const baseLicenses: Omit<License, "usdPrice">[] = [
-      {
-        id: "license-1",
-        name: "Basic License",
-        price: 50,
-        description: "Basic non-commercial use of IP",
-        terms: {
-          transferable: true,
-          defaultMintingFee: 50,
-          expiration: "1 year",
-          commercialUse: false,
-          commercialAttribution: true,
-          commercialRevShare: 0,
-          derivativesAllowed: true,
-          derivativesAttribution: true,
-          derivativesApproval: false,
-          derivativesReciprocal: true,
-          territory: "Global",
-          channelsOfDistribution: ["Digital", "Social Media"],
-          contentStandards: ["No-Hate", "Suitable-for-All-Ages"],
-        },
-      },
-      {
-        id: "license-2",
-        name: "Commercial License",
-        price: 500,
-        description: "Full commercial use with revenue sharing",
-        terms: {
-          transferable: true,
-          defaultMintingFee: 500,
-          expiration: "2 years",
-          commercialUse: true,
-          commercialAttribution: true,
-          commercialRevShare: 10,
-          derivativesAllowed: true,
-          derivativesAttribution: true,
-          derivativesApproval: true,
-          derivativesReciprocal: false,
-          territory: "Global",
-          channelsOfDistribution: [
-            "Digital",
-            "Physical",
-            "Social Media",
-            "Print",
-          ],
-          contentStandards: ["No-Hate", "No-Pornography"],
-        },
-      },
-      {
-        id: "license-3",
-        name: "Enterprise License",
-        price: 2000,
-        description: "Unlimited commercial use with minimal restrictions",
-        terms: {
-          transferable: true,
-          defaultMintingFee: 2000,
-          expiration: "5 years",
-          commercialUse: true,
-          commercialAttribution: false,
-          commercialRevShare: 5,
-          derivativesAllowed: true,
-          derivativesAttribution: false,
-          derivativesApproval: false,
-          derivativesReciprocal: false,
-          territory: "Global",
-          channelsOfDistribution: ["All Channels"],
-          contentStandards: ["No-Hate"],
-        },
-      },
-    ];
-
-    // Calculate USD prices if token price is available
-    if (tokenPrice !== null) {
-      const licensesWithUsdPrices = baseLicenses.map((license) => ({
-        ...license,
-        usdPrice: license.price * tokenPrice,
-      }));
-      setLicenses(licensesWithUsdPrices);
-    }
-  }, [tokenPrice]);
+    fetchLicenses();
+  }, [ip.ipId]);
 
   const handleLicenseSelect = (licenseId: string) => {
     setSelectedLicense(licenseId === selectedLicense ? null : licenseId);
@@ -162,13 +62,48 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
     alert(`License ${licenseId} would be minted in a real app`);
   };
 
-  // Show loading state if licenses aren't loaded yet
-  if (licenses.length === 0) {
+  // Format minting fee from wei to tokens with no trailing zeros
+  const formatMintingFee = (fee: number | undefined): string => {
+    if (!fee) return "0";
+    // Convert to string and ensure proper BigInt formatting with a max of 4 decimal places
+    const formatted = parseFloat(formatEther(BigInt(fee))).toFixed(4);
+    // Remove trailing zeros and decimal point if needed
+    return parseFloat(formatted).toString();
+  };
+
+  // Format revenue share from large number to percentage with no trailing zeros
+  const formatRevShare = (revShare: number | undefined): string => {
+    if (!revShare) return "0%";
+    // API stores percentages multiplied by 10^6 (e.g., 5000000 = 5%)
+    const percentage = (revShare / 1000000).toFixed(2);
+    // Remove trailing zeros and decimal point if needed
+    return `${parseFloat(percentage)}%`;
+  };
+
+  // Show loading state if licenses are still loading
+  if (isLoading) {
     return (
       <div className="bg-cardBg rounded-md border border-border p-4">
         <div className="flex items-center justify-center">
           <Scroll className="h-4 w-4 mr-2 text-accentPurple animate-pulse" />
           <span className="text-sm text-textMuted">Loading licenses...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show a message if no licenses are available
+  if (licenses.length === 0) {
+    return (
+      <div className="bg-cardBg rounded-md border border-border p-4">
+        <div className="p-3">
+          <div className="flex items-center mb-1">
+            <Scroll className="h-4 w-4 mr-1 text-accentPurple" />
+            <h3 className="text-sm font-semibold">Licenses</h3>
+          </div>
+          <p className="text-xs text-textMuted">
+            No licenses available for this IP
+          </p>
         </div>
       </div>
     );
@@ -222,7 +157,7 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-medium">{license.name}</p>
+                  <p className="text-xs font-medium">{license.displayName}</p>
                   <p className="text-xs text-textMuted">
                     {license.description}
                   </p>
@@ -230,9 +165,11 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
               </div>
               <div className="flex items-center">
                 <div className="text-right mr-3">
-                  <p className="text-xs font-medium">{license.price} $IP</p>
+                  <p className="text-xs font-medium">
+                    {formatMintingFee(license.terms.defaultMintingFee)} $IP
+                  </p>
                   <p className="text-xs text-textMuted">
-                    (~{formatUSD(license.usdPrice)})
+                    (~{formatUSD(license.usdPrice || 0)})
                   </p>
                 </div>
                 <button
@@ -281,12 +218,12 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                       />
                       <LicenseTermItem
                         label="Revenue Share"
-                        value={`${license.terms.commercialRevShare}%`}
+                        value={formatRevShare(license.terms.commercialRevShare)}
                         neutral
                       />
                       <LicenseTermItem
                         label="Expiration"
-                        value={license.terms.expiration}
+                        value={formatExpiration(license.terms.expiration)}
                         neutral
                       />
                       <LicenseTermItem
@@ -311,24 +248,14 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
 
                     <div className="flex flex-wrap gap-1 mb-1">
                       <span className="text-xs bg-accentPurple/10 text-accentPurple px-2 py-0.5 rounded-full">
-                        {license.terms.territory}
+                        Global
                       </span>
-                      {license.terms.channelsOfDistribution
-                        .slice(0, 2)
-                        .map((channel) => (
-                          <span
-                            key={channel}
-                            className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full"
-                          >
-                            {channel}
-                          </span>
-                        ))}
-                      {license.terms.channelsOfDistribution.length > 2 && (
-                        <span className="text-xs text-textMuted">
-                          +{license.terms.channelsOfDistribution.length - 2}{" "}
-                          more
-                        </span>
-                      )}
+                      <span className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full">
+                        Digital
+                      </span>
+                      <span className="text-xs bg-accentGreen/10 text-accentGreen px-2 py-0.5 rounded-full">
+                        Physical
+                      </span>
                     </div>
 
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50">
@@ -336,8 +263,12 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                         className="text-xs text-accentPurple flex items-center hover:underline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // In a real app this would open a modal with full license terms
-                          alert("This would show the full license terms");
+                          // If we have a terms URI, we could open that here
+                          if (license.terms.uri) {
+                            window.open(license.terms.uri, "_blank");
+                          } else {
+                            alert("Full license terms not available");
+                          }
                         }}
                       >
                         <FileText className="h-3 w-3 mr-1" />

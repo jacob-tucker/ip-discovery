@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RoyaltyPayment } from "@/types/royalty";
-import {
-  getTokenPrice,
-  weiToTokens,
-  formatTokenAmount,
-} from "@/lib/tokenPrice";
+import { getTokenPrice, formatTokenAmount } from "@/lib/tokenPrice";
+import { formatEther } from "viem";
 
 // Set cache control headers for 5 minutes (shorter for more real-time data)
 export const revalidate = 300; // 5 minutes in seconds
@@ -76,8 +73,8 @@ async function fetchRoyaltyPaymentsFromStory(
       // Convert block timestamp (typically in seconds since epoch) to milliseconds
       const timestamp = parseInt(payment.blockTimestamp) * 1000;
 
-      // Convert amount from wei to $IP tokens using our utility
-      const amountInIP = weiToTokens(payment.amount);
+      // Convert amount from wei to $IP tokens using viem's formatEther
+      const amountInIP = parseFloat(formatEther(BigInt(payment.amount || "0")));
 
       return {
         id: payment.id,
