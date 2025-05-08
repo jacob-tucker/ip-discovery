@@ -84,7 +84,7 @@ export default function Header() {
           </div>
           <div>
             <span className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-accentOrange to-pink-500">
-              IP Discovery
+              IP on Top
             </span>
             <div className="h-0.5 w-0 group-hover:w-full bg-gradient-to-r from-accentOrange to-pink-500 transition-all duration-300"></div>
           </div>

@@ -23,7 +23,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <title>IP Discovery Platform</title>
+        <title>IP on Top</title>
         <meta
           name="description"
           content="Discover curated Intellectual Property Assets on Story Protocol."

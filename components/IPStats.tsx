@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Eye,
   Clock,
@@ -14,14 +15,57 @@ import {
   Music,
   Video,
   Image as ImageIcon,
+  GitBranch,
 } from "lucide-react";
 import { IPAsset } from "@/types/ip";
+import { getAssetDataFromStory, getDisputesForIP } from "@/lib/data";
 
 interface IPStatsProps {
   ip: IPAsset;
 }
 
 export default function IPStats({ ip }: IPStatsProps) {
+  const [derivativeCount, setDerivativeCount] = useState<number | null>(null);
+  const [disputeCount, setDisputeCount] = useState<number | null>(null);
+  const [isLoadingDerivatives, setIsLoadingDerivatives] = useState(true);
+  const [isLoadingDisputes, setIsLoadingDisputes] = useState(true);
+
+  // Fetch derivative count data when component mounts
+  useEffect(() => {
+    const fetchDerivativeData = async () => {
+      try {
+        setIsLoadingDerivatives(true);
+        const assetData = await getAssetDataFromStory(ip.ipId);
+        if (assetData) {
+          setDerivativeCount(assetData.descendantCount || 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch derivative data:", error);
+      } finally {
+        setIsLoadingDerivatives(false);
+      }
+    };
+
+    fetchDerivativeData();
+  }, [ip.ipId]);
+
+  // Fetch dispute count data when component mounts
+  useEffect(() => {
+    const fetchDisputeData = async () => {
+      try {
+        setIsLoadingDisputes(true);
+        const count = await getDisputesForIP(ip.ipId);
+        setDisputeCount(count);
+      } catch (error) {
+        console.error("Failed to fetch dispute data:", error);
+      } finally {
+        setIsLoadingDisputes(false);
+      }
+    };
+
+    fetchDisputeData();
+  }, [ip.ipId]);
+
   // Format media type for display
   const formatMediaType = (mediaType: string) => {
     const [type, format] = mediaType.split("/");
@@ -72,9 +116,9 @@ export default function IPStats({ ip }: IPStatsProps) {
           icon: <Eye className="h-3 w-3 text-accentOrange" />,
         },
         {
-          label: "Licenses",
-          value: 42,
-          icon: <CreditCard className="h-3 w-3 text-accentGreen" />,
+          label: "Derivatives",
+          value: isLoadingDerivatives ? "Loading..." : derivativeCount || 0,
+          icon: <GitBranch className="h-3 w-3 text-accentGreen" />,
         },
       ],
     },
@@ -82,14 +126,9 @@ export default function IPStats({ ip }: IPStatsProps) {
       title: "Disputes",
       stats: [
         {
-          label: "Active",
-          value: 2,
+          label: "Raised",
+          value: isLoadingDisputes ? "Loading..." : disputeCount || 0,
           icon: <AlertTriangle className="h-3 w-3 text-accentOrange" />,
-        },
-        {
-          label: "Resolved",
-          value: 5,
-          icon: <Shield className="h-3 w-3 text-accentGreen" />,
         },
       ],
     },

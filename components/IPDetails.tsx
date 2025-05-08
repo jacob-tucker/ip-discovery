@@ -115,7 +115,7 @@ export default function IPDetails({ ip }: IPDetailsProps) {
               </div>
 
               {/* Social media icons */}
-              {creator.socialMedia.length > 0 && (
+              {creator.socialMedia && creator.socialMedia.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1">
                   {creator.socialMedia.map((social) => (
                     <a

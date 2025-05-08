@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div>
             <p className="text-textMuted text-sm">
-              &copy; {new Date().getFullYear()} IP Discovery Platform
+              &copy; {new Date().getFullYear()} IP on Top
             </p>
             <p className="text-xs text-textMuted mt-1">
               Powered by Story Protocol

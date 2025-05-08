@@ -51,6 +51,36 @@ export const getIPAssetMetadataFromStory = async (
   }
 };
 
+/**
+ * Get detailed asset data from Story Protocol API, including derivative counts
+ */
+export const getAssetDataFromStory = async (
+  ipId: string
+): Promise<{
+  descendantCount: number;
+  childrenCount: number;
+  ancestorCount: number;
+  [key: string]: any;
+} | null> => {
+  try {
+    // Fetch from our API endpoint which handles caching
+    const response = await fetch(`/api/assets/${ipId}`, {
+      next: { revalidate: 300 }, // 5 minutes, matching the API's revalidate setting
+    });
+
+    if (!response.ok) {
+      console.error(`API error: ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.data; // The Story API wraps the data in a data property
+  } catch (error) {
+    console.error("Error fetching asset data via API:", error);
+    return null;
+  }
+};
+
 export const getStoryIPAssetById = async (
   ipId: string
 ): Promise<IPAsset | null> => {
@@ -173,5 +203,30 @@ export const getLicensesForIP = async (
   } catch (error) {
     console.error("Error fetching licenses via API:", error);
     return [];
+  }
+};
+
+/**
+ * Get dispute data for a specific IP asset
+ * @param ipId IP asset ID
+ * @returns Number of disputes raised for the IP
+ */
+export const getDisputesForIP = async (ipId: string): Promise<number> => {
+  try {
+    // Fetch from our API endpoint which handles caching
+    const response = await fetch(`/api/disputes/${ipId}`, {
+      next: { revalidate: 300 }, // 5 minutes, matching the API's revalidate setting
+    });
+
+    if (!response.ok) {
+      console.error(`API error: ${response.status} ${response.statusText}`);
+      return 0;
+    }
+
+    const data = await response.json();
+    return data.count || 0;
+  } catch (error) {
+    console.error("Error fetching disputes via API:", error);
+    return 0;
   }
 };
