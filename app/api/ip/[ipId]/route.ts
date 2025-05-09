@@ -42,7 +42,7 @@ export async function GET(
       // Construct the IPAsset with defaults for missing fields
       const ipAsset: IPAsset = {
         ipId: ipId,
-        title: metadataJson.title || "Unknown IP",
+        title: metadataJson.title || metadataJson.name || "Unknown IP",
         description: metadataJson.description || "No description available",
         createdAt: metadataJson.createdAt || new Date().toISOString(),
         image: metadataJson.image || "/placeholder-image.png",

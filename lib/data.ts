@@ -2,7 +2,6 @@ import { IPAsset } from "@/types/ip";
 import { RoyaltyPayment } from "@/types/royalty";
 import { DetailedLicenseTerms } from "@/types/license";
 import ipAssets from "@/data/ip-assets.json";
-import royaltyPayments from "@/data/royalty-payments.json";
 
 // Enrich local data with ipId (using title as a fallback)
 const enrichedIPAssets = ipAssets.map((asset) => ({
@@ -125,10 +124,37 @@ function getMediaType(url?: string): string {
 }
 
 export const getAllRoyaltyPayments = async (): Promise<RoyaltyPayment[]> => {
-  // Sort by timestamp in descending order (most recent first)
-  return (royaltyPayments as RoyaltyPayment[]).sort(
-    (a, b) => b.timestamp - a.timestamp
+  console.log(
+    "Getting all royalty payments - using real API data instead of mock data"
   );
+
+  // Get all available IPs to fetch their royalty data
+  const ipAssets = await getIPAssets();
+  const ipIds = ipAssets.map((asset) => asset.ipId);
+
+  // Collect royalty data for all IPs
+  const allRoyalties: RoyaltyPayment[] = [];
+
+  try {
+    // Fetch up to 3 royalty payments for each IP to keep the list manageable
+    const paymentPromises = ipIds.map((ipId) =>
+      getRoyaltyPaymentsForIP(ipId, 3)
+    );
+    const paymentResults = await Promise.all(paymentPromises);
+
+    // Flatten the results and remove empty arrays
+    paymentResults.forEach((payments) => {
+      if (payments && payments.length > 0) {
+        allRoyalties.push(...payments);
+      }
+    });
+
+    // Sort by timestamp (most recent first) and limit to a reasonable number
+    return allRoyalties.sort((a, b) => b.timestamp - a.timestamp).slice(0, 20); // Limit to 20 payments total
+  } catch (error) {
+    console.error("Error fetching global royalty payments:", error);
+    return []; // Return empty array if there's an error
+  }
 };
 
 export const getRoyaltyPaymentsForIP = async (

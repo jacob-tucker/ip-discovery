@@ -79,9 +79,11 @@ export default function IPDetails({ ip }: IPDetailsProps) {
                 <div>
                   <div className="flex items-center">
                     <p className="font-medium text-xs mr-1">{creator.name}</p>
-                    <div className="text-accentOrange text-xs px-1.5 py-0.5 rounded-full bg-accentOrange/10">
-                      {creator.contributionPercent}%
-                    </div>
+                    {creator.contributionPercent && (
+                      <div className="text-accentOrange text-xs px-1.5 py-0.5 rounded-full bg-accentOrange/10">
+                        {creator.contributionPercent}%
+                      </div>
+                    )}
                   </div>
 
                   {creator.description && (
@@ -90,15 +92,6 @@ export default function IPDetails({ ip }: IPDetailsProps) {
                     </p>
                   )}
                 </div>
-
-                {/* Copy address button */}
-                <button
-                  onClick={() => copyToClipboard(creator.address)}
-                  className="text-textMuted hover:text-accentPurple transition-colors"
-                  title="Copy creator address"
-                >
-                  <Copy className="h-3 w-3" />
-                </button>
               </div>
 
               {/* Creator address */}
