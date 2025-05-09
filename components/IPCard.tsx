@@ -36,7 +36,6 @@ export default function IPCard({ ip }: IPCardProps) {
   // Media type handling
   const isAudio = ip.mediaType?.startsWith("audio/");
   const isVideo = ip.mediaType?.startsWith("video/");
-  const isImage = ip.mediaType?.startsWith("image/") || !ip.mediaType;
 
   // Get media type icon
   const getMediaTypeIcon = () => {

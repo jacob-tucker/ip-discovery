@@ -17,7 +17,7 @@ export async function GET(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
+        "X-Api-Key": process.env.X_API_KEY,
         "X-Chain": "story-aeneid",
       },
       body: JSON.stringify({

@@ -17,8 +17,8 @@ export async function GET(
       `https://api.storyapis.com/api/v3/assets/${ipId}`,
       {
         headers: {
-          "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
-          "X-Chain": "story",
+          "X-Api-Key": process.env.X_API_KEY,
+          "X-Chain": process.env.X_CHAIN,
         },
         next: { revalidate },
       }

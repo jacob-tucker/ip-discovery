@@ -25,9 +25,6 @@ export default function MediaRenderer({
   // Check if media type is video
   const isVideo = mediaType.startsWith("video/");
 
-  // Check if media type is image
-  const isImage = mediaType.startsWith("image/");
-
   // If media type is not recognized, default to image
   const fallbackImage = fallbackImageUrl || "/placeholder-image.jpg";
 

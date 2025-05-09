@@ -17,8 +17,8 @@ export async function getIPLicensesFromStory(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
-          "X-Chain": "story",
+          "X-Api-Key": process.env.X_API_KEY,
+          "X-Chain": process.env.X_CHAIN,
         },
         body: JSON.stringify({
           options: {

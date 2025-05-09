@@ -42,7 +42,6 @@ export async function GET(
   const resolvedParams = await params;
   const ipId = resolvedParams.ipId;
   const origin = request.nextUrl.origin;
-  const storyApiKey = "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U";
 
   try {
     // Step 1: Try to get metadata URI and asset data
@@ -55,8 +54,8 @@ export async function GET(
         `https://api.storyapis.com/api/v3/assets/${ipId}/metadata`,
         {
           headers: {
-            "X-Api-Key": storyApiKey,
-            "X-Chain": "story",
+            "X-Api-Key": process.env.X_API_KEY,
+            "X-Chain": process.env.X_CHAIN,
           },
           next: { revalidate },
         }
