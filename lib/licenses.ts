@@ -1,6 +1,7 @@
 import { DetailedLicenseTerms, LicenseTerms } from "@/types/license";
 import { getTokenPrice } from "./tokenPrice";
 import { formatEther } from "viem";
+import { getBaseUrl } from "./data";
 
 /**
  * Get license data from Story Protocol API
@@ -11,24 +12,20 @@ export async function getIPLicensesFromStory(
   ipId: string
 ): Promise<DetailedLicenseTerms[]> {
   try {
-    const response = await fetch(
-      "https://api.storyapis.com/api/v3/detailed-ip-license-terms",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Api-Key": process.env.X_API_KEY,
-          "X-Chain": process.env.X_CHAIN,
-        },
-        body: JSON.stringify({
-          options: {
-            where: {
-              ipIds: [ipId],
-            },
-          },
-        }),
-      }
-    );
+    const baseUrl = getBaseUrl();
+
+    // Use our proxy API endpoint to handle caching and environment variables
+    const response = await fetch(`${baseUrl}/api/license-terms`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ipIds: [ipId],
+      }),
+      // Use Next.js cache with revalidation
+      next: { revalidate: 900 }, // 15 minutes, matching the API's revalidate setting
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch license terms: ${response.statusText}`);

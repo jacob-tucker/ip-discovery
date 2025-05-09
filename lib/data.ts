@@ -4,7 +4,7 @@ import { DetailedLicenseTerms } from "@/types/license";
 import { featuredIPIds } from "@/data/featured-ipids";
 
 // Helper function to get base URL - used consistently across all functions
-const getBaseUrl = (): string => {
+export const getBaseUrl = (): string => {
   // In the browser, we can use relative URLs
   if (typeof window !== "undefined") {
     return "";
