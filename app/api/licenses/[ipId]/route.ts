@@ -17,6 +17,18 @@ function convertToRawGitHubUrl(url: string): string {
   return url;
 }
 
+// Helper function to validate if a URL is legitimate
+function isValidUrl(urlString: string): boolean {
+  try {
+    // Check if string is a valid URL format
+    const url = new URL(urlString);
+    // Ensure protocol is http or https (not ipfs:// or other non-web protocols)
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch (error) {
+    return false;
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ ipId: string }> }
@@ -37,17 +49,30 @@ export async function GET(
     // Filter out disabled licenses
     const activeLicenses = licenses.filter((license) => !license.disabled);
 
-    // Fetch off-chain terms for each license with a URI
+    // Fetch off-chain terms for each license with a valid URI
     const enhancedLicenses = await Promise.all(
       activeLicenses.map(async (license: DetailedLicenseTerms) => {
-        if (license.terms.uri) {
-          try {
-            // Convert GitHub URLs to raw format if needed
-            const fetchUrl = convertToRawGitHubUrl(license.terms.uri);
+        // Skip fetching if there's no URI or it's not a valid URL
+        if (!license.terms.uri || !isValidUrl(license.terms.uri)) {
+          console.log(
+            `License ${license.id} has no valid URI for off-chain terms`
+          );
+          return license;
+        }
 
-            // Fetch the off-chain terms from the license URI
-            const response = await fetch(fetchUrl);
-            console.log(`Fetching off-chain terms from: ${fetchUrl}`);
+        try {
+          // Convert GitHub URLs to raw format if needed
+          const fetchUrl = convertToRawGitHubUrl(license.terms.uri);
+          console.log(`Fetching off-chain terms from: ${fetchUrl}`);
+
+          // Fetch the off-chain terms from the license URI with a timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+          try {
+            const response = await fetch(fetchUrl, {
+              signal: controller.signal,
+            });
 
             if (response.ok) {
               const offchainTerms = await response.json();
@@ -56,16 +81,22 @@ export async function GET(
                 ...license,
                 offchainTerms: offchainTerms as OffchainTerms,
               };
+            } else {
+              console.warn(
+                `Failed to fetch off-chain terms: ${response.status} ${response.statusText}`
+              );
             }
-          } catch (error) {
-            console.error(
-              `Failed to fetch off-chain terms for license ${license.id}:`,
-              error
-            );
+          } finally {
+            clearTimeout(timeoutId);
           }
+        } catch (error) {
+          console.error(
+            `Failed to fetch off-chain terms for license ${license.id}:`,
+            error instanceof Error ? error.message : error
+          );
         }
 
-        // Return license without off-chain terms if fetch failed or no URI
+        // Return license without off-chain terms if fetch failed
         return license;
       })
     );

@@ -59,80 +59,85 @@ export default function IPDetails({ ip }: IPDetailsProps) {
 
   return (
     <div className="bg-cardBg rounded-md border border-border">
-      <div className="p-3 border-b border-border">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center">
-            <User className="h-4 w-4 mr-1 text-accentOrange" />
-            <h3 className="text-xs font-semibold">Creators</h3>
+      {ip.creators.length > 0 && (
+        <div className="p-3 border-b border-border">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center">
+              <User className="h-4 w-4 mr-1 text-accentOrange" />
+              <h3 className="text-xs font-semibold">Creators</h3>
+            </div>
+            {ip.creators.length > 2 && (
+              <a href="#" className="text-xs text-accentPurple">
+                View all
+              </a>
+            )}
           </div>
-          {ip.creators.length > 2 && (
-            <a href="#" className="text-xs text-accentPurple">
-              View all
-            </a>
-          )}
-        </div>
 
-        <div className="space-y-3">
-          {ip.creators.slice(0, 2).map((creator) => (
-            <div key={creator.address} className="bg-background rounded-md p-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center">
-                    <p className="font-medium text-xs mr-1">{creator.name}</p>
-                    {creator.contributionPercent && (
-                      <div className="text-accentOrange text-xs px-1.5 py-0.5 rounded-full bg-accentOrange/10">
-                        {creator.contributionPercent}%
-                      </div>
+          <div className="space-y-3">
+            {ip.creators.slice(0, 2).map((creator) => (
+              <div
+                key={creator.address}
+                className="bg-background rounded-md p-2"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center">
+                      <p className="font-medium text-xs mr-1">{creator.name}</p>
+                      {creator.contributionPercent && (
+                        <div className="text-accentOrange text-xs px-1.5 py-0.5 rounded-full bg-accentOrange/10">
+                          {creator.contributionPercent}%
+                        </div>
+                      )}
+                    </div>
+
+                    {creator.description && (
+                      <p className="text-xs text-textMuted mt-1 line-clamp-1">
+                        {creator.description}
+                      </p>
                     )}
                   </div>
-
-                  {creator.description && (
-                    <p className="text-xs text-textMuted mt-1 line-clamp-1">
-                      {creator.description}
-                    </p>
-                  )}
                 </div>
-              </div>
 
-              {/* Creator address */}
-              <div className="flex items-center mt-1 mb-1">
-                <p className="text-[10px] text-textMuted font-mono">
-                  {formatAddress(creator.address)}
-                </p>
-                <button
-                  onClick={() => copyToClipboard(creator.address)}
-                  className="ml-1 text-textMuted hover:text-accentPurple transition-colors"
-                >
-                  <Copy className="h-2 w-2" />
-                </button>
-              </div>
-
-              {/* Social media icons */}
-              {creator.socialMedia && creator.socialMedia.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {creator.socialMedia.map((social) => (
-                    <a
-                      key={social.url}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-accentPurple hover:bg-accentPurple/20 p-1 rounded-full transition-colors"
-                      title={`${creator.name}'s ${social.platform}`}
-                    >
-                      {getSocialIcon(social.platform)}
-                    </a>
-                  ))}
+                {/* Creator address */}
+                <div className="flex items-center mt-1 mb-1">
+                  <p className="text-[10px] text-textMuted font-mono">
+                    {formatAddress(creator.address)}
+                  </p>
+                  <button
+                    onClick={() => copyToClipboard(creator.address)}
+                    className="ml-1 text-textMuted hover:text-accentPurple transition-colors"
+                  >
+                    <Copy className="h-2 w-2" />
+                  </button>
                 </div>
-              )}
-            </div>
-          ))}
-          {ip.creators.length > 2 && (
-            <div className="text-center text-xs text-textMuted">
-              + {ip.creators.length - 2} more creators
-            </div>
-          )}
+
+                {/* Social media icons */}
+                {creator.socialMedia && creator.socialMedia.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {creator.socialMedia.map((social) => (
+                      <a
+                        key={social.url}
+                        href={social.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-accentPurple hover:bg-accentPurple/20 p-1 rounded-full transition-colors"
+                        title={`${creator.name}'s ${social.platform}`}
+                      >
+                        {getSocialIcon(social.platform)}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            {ip.creators.length > 2 && (
+              <div className="text-center text-xs text-textMuted">
+                + {ip.creators.length - 2} more creators
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="border-t border-border p-3">
         <div className="flex items-center justify-between mb-2">

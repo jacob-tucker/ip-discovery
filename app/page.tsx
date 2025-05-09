@@ -8,7 +8,6 @@ import SearchBar from "@/components/SearchBar";
 import Footer from "@/components/Footer";
 import RoyaltyPayments from "@/components/RoyaltyPayments";
 import { IPAsset } from "@/types/ip";
-import Link from "next/link";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
