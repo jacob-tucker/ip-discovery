@@ -59,9 +59,8 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
   };
 
   const mintLicense = (licenseId: string) => {
-    // In a real app, this would call a contract
-    console.log(`Minting license ${licenseId}`);
-    alert(`License ${licenseId} would be minted in a real app`);
+    // Redirect to the Portal URL for this asset
+    window.open(`https://portal.story.foundation/assets/${ip.ipId}`, "_blank");
   };
 
   // Format minting fee from wei to tokens with no trailing zeros
