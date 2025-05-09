@@ -13,7 +13,7 @@ function transformIpfsUrl(url: string): string {
   if (url.startsWith("ipfs://")) {
     // Extract the CID (everything after ipfs://)
     const cid = url.substring(7);
-    // Transform to https://ipfs.io/ipfs/{cid}
+    // Transform to https://ipfs.io/ipfs/${cid}
     return `https://ipfs.io/ipfs/${cid}`;
   }
 
@@ -54,13 +54,46 @@ export async function GET(
 
       const metadataJson = await response.json();
 
-      // Transform any IPFS URLs in the metadata
-      const image = transformIpfsUrl(
-        metadataJson.image || "/placeholder-image.png"
-      );
-      const mediaUrl = transformIpfsUrl(
-        metadataJson.mediaUrl || metadataJson.image || "/placeholder-image.png"
-      );
+      // Initialize image and mediaUrl variables
+      let image = metadataJson.image
+        ? transformIpfsUrl(metadataJson.image)
+        : null;
+      let mediaUrl = metadataJson.mediaUrl
+        ? transformIpfsUrl(metadataJson.mediaUrl)
+        : null;
+
+      // If there's no image, try to fetch from the asset data API
+      if (!image) {
+        try {
+          // Use our asset API endpoint to get NFT metadata
+          const assetResponse = await fetch(
+            `${request.nextUrl.origin}/api/assets/${ipId}`
+          );
+
+          if (assetResponse.ok) {
+            const { data } = await assetResponse.json();
+            console.log("Asset data:", data);
+
+            // Check if we have nftMetadata with imageUrl
+            if (data.nftMetadata && data.nftMetadata.imageUrl) {
+              image = transformIpfsUrl(data.nftMetadata.imageUrl);
+              console.log("Found image in NFT metadata:", image);
+
+              // If no media URL was specified, use the NFT image for that too
+              if (!mediaUrl) {
+                mediaUrl = image;
+              }
+            }
+          }
+        } catch (assetError) {
+          console.error("Error fetching asset data:", assetError);
+          // Continue with the process even if asset data fetch fails
+        }
+      }
+
+      // Set fallback values if we still don't have an image or mediaUrl
+      image = image || "/placeholder-image.png";
+      mediaUrl = mediaUrl || image;
 
       // Construct the IPAsset with defaults for missing fields
       const ipAsset: IPAsset = {
