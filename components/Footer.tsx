@@ -9,34 +9,16 @@ export default function Footer() {
             <p className="text-textMuted text-sm">
               &copy; {new Date().getFullYear()} IP on Top
             </p>
-            <p className="text-xs text-textMuted mt-1">
-              Powered by Story Protocol
-            </p>
           </div>
-          <div className="mt-4 md:mt-0 flex space-x-6">
+          <div className="mt-4 md:mt-0 text-sm text-textMuted">
+            Powered by Story, created by{" "}
             <a
-              href="https://story.foundation"
+              href="https://x.com/jacobmtucker"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-textMuted hover:text-accentOrange"
+              className="text-accentPurple hover:text-accentOrange transition-colors"
             >
-              Story Foundation
-            </a>
-            <a
-              href="https://twitter.com/storyprotocol"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-textMuted hover:text-accentOrange"
-            >
-              Twitter
-            </a>
-            <a
-              href="https://discord.gg/storyprotocol"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-textMuted hover:text-accentOrange"
-            >
-              Discord
+              Jacob Tucker
             </a>
           </div>
         </div>
