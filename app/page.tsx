@@ -82,19 +82,27 @@ export default function Home() {
             <div className="lg:sticky lg:top-4">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Royalty Activity</h2>
-                <Link
-                  href="/royalties"
-                  className="text-xs text-accentPurple hover:underline"
-                >
-                  See All Payments
-                </Link>
+                <RoyaltyCount />
               </div>
-              <RoyaltyPayments limit={4} isHomepage={true} />
+              <RoyaltyPayments limit={20} isHomepage={true} />
             </div>
           </div>
         </div>
       </main>
       <Footer />
     </div>
+  );
+}
+
+// New component to display royalty count
+function RoyaltyCount() {
+  const limit = 20; // Fixed limit of 20
+  const initialLimit = 5; // Initial display limit of 5
+
+  // Return a fixed string since we know the limits are constant
+  return (
+    <span className="text-xs text-textMuted">
+      {`${initialLimit} of ${limit} payments`}
+    </span>
   );
 }

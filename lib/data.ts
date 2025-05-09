@@ -3,32 +3,14 @@ import { RoyaltyPayment } from "@/types/royalty";
 import { DetailedLicenseTerms } from "@/types/license";
 import { featuredIPIds } from "@/data/featured-ipids";
 
-export const getIPAssetMetadataFromStory = async (
-  ipId: string
-): Promise<any> => {
-  try {
-    const response = await fetch(
-      `https://api.storyapis.com/api/v3/assets/${ipId}/metadata`,
-      {
-        headers: {
-          "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
-          "X-Chain": "story",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch IP asset metadata: ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching IP asset metadata:", error);
-    throw error;
-  }
+// Helper function to get base URL - used consistently across all functions
+const getBaseUrl = (): string => {
+  const isServer = typeof window === "undefined";
+  return isServer
+    ? process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000"
+    : "";
 };
 
 /**
@@ -43,13 +25,7 @@ export const getAssetDataFromStory = async (
   [key: string]: any;
 } | null> => {
   try {
-    // Determine if we're in a browser or server environment
-    const isServer = typeof window === "undefined";
-    const baseUrl = isServer
-      ? process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000"
-      : "";
+    const baseUrl = getBaseUrl();
 
     // Fetch from our API endpoint which handles caching
     const response = await fetch(`${baseUrl}/api/assets/${ipId}`, {
@@ -67,16 +43,6 @@ export const getAssetDataFromStory = async (
     console.error("Error fetching asset data via API:", error);
     return null;
   }
-};
-
-// Helper function to get base URL
-const getBaseUrl = (): string => {
-  const isServer = typeof window === "undefined";
-  return isServer
-    ? process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000"
-    : "";
 };
 
 export const getStoryIPAssetById = async (
@@ -103,22 +69,6 @@ export const getStoryIPAssetById = async (
   }
 };
 
-// Helper function to determine media type
-function getMediaType(url?: string): string {
-  if (!url) return "image/png";
-
-  if (url.endsWith(".mp3")) return "audio/mpeg";
-  if (url.endsWith(".mp4")) return "video/mp4";
-  if (url.endsWith(".webm")) return "video/webm";
-  if (url.endsWith(".jpg") || url.endsWith(".jpeg")) return "image/jpeg";
-  if (url.endsWith(".png")) return "image/png";
-  if (url.endsWith(".gif")) return "image/gif";
-  if (url.endsWith(".svg")) return "image/svg+xml";
-
-  // Default to image/png if type can't be determined
-  return "image/png";
-}
-
 export const getAllRoyaltyPayments = async (): Promise<RoyaltyPayment[]> => {
   console.log(
     "Getting all royalty payments - using featured IP IDs from config"
@@ -131,9 +81,9 @@ export const getAllRoyaltyPayments = async (): Promise<RoyaltyPayment[]> => {
   const allRoyalties: RoyaltyPayment[] = [];
 
   try {
-    // Fetch up to 3 royalty payments for each IP to keep the list manageable
+    // Fetch up to 10 royalty payments for each IP to ensure we have enough data
     const paymentPromises = ipIds.map((ipId) =>
-      getRoyaltyPaymentsForIP(ipId, 3)
+      getRoyaltyPaymentsForIP(ipId, 10)
     );
     const paymentResults = await Promise.all(paymentPromises);
 
@@ -145,7 +95,7 @@ export const getAllRoyaltyPayments = async (): Promise<RoyaltyPayment[]> => {
     });
 
     // Sort by timestamp (most recent first) and limit to a reasonable number
-    return allRoyalties.sort((a, b) => b.timestamp - a.timestamp).slice(0, 20); // Limit to 20 payments total
+    return allRoyalties.sort((a, b) => b.timestamp - a.timestamp).slice(0, 40); // Get 40 payments to ensure we have enough
   } catch (error) {
     console.error("Error fetching global royalty payments:", error);
     return []; // Return empty array if there's an error

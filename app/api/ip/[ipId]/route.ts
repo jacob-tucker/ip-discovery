@@ -1,9 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getIPAssetMetadataFromStory } from "@/lib/data";
 import { IPAsset } from "@/types/ip";
 
 // Set cache control headers for 15 minutes
 export const revalidate = 900; // 15 minutes in seconds
+
+// Helper function to fetch IP asset metadata from Story Protocol
+const getIPAssetMetadataFromStory = async (ipId: string): Promise<any> => {
+  try {
+    const response = await fetch(
+      `https://api.storyapis.com/api/v3/assets/${ipId}/metadata`,
+      {
+        headers: {
+          "X-Api-Key": "MhBsxkU1z9fG6TofE59KqiiWV-YlYE8Q4awlLQehF3U",
+          "X-Chain": "story",
+        },
+        next: { revalidate },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch IP asset metadata: ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching IP asset metadata:", error);
+    throw error;
+  }
+};
 
 // Helper function to transform IPFS URLs
 function transformIpfsUrl(url: string): string {
@@ -72,12 +99,10 @@ export async function GET(
 
           if (assetResponse.ok) {
             const { data } = await assetResponse.json();
-            console.log("Asset data:", data);
 
             // Check if we have nftMetadata with imageUrl
             if (data.nftMetadata && data.nftMetadata.imageUrl) {
               image = transformIpfsUrl(data.nftMetadata.imageUrl);
-              console.log("Found image in NFT metadata:", image);
 
               // If no media URL was specified, use the NFT image for that too
               if (!mediaUrl) {

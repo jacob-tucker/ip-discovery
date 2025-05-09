@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
     const limitParam = searchParams.get("limit");
     const limit = limitParam ? parseInt(limitParam, 10) : 20;
 
-    // Fetch all royalty payments
+    // Fetch all royalty payments (the function in data.ts already sorts and limits to 40)
     const allRoyaltyPayments = await getAllRoyaltyPayments();
 
-    // Limit the number of payments if specified
+    // Apply the requested limit
     const limitedPayments =
       limit > 0 ? allRoyaltyPayments.slice(0, limit) : allRoyaltyPayments;
 

@@ -38,8 +38,8 @@ export default function Header() {
 
   // Filter results based on search query
   useEffect(() => {
-    if (searchQuery.length > 0) {
-      const timer = setTimeout(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.length > 0) {
         const filteredResults = ipAssets
           .filter(
             (item) =>
@@ -48,11 +48,12 @@ export default function Header() {
           )
           .slice(0, 5); // Limit to 5 results for performance
         setSearchResults(filteredResults);
-      }, 300);
-      return () => clearTimeout(timer);
-    } else {
-      setSearchResults([]);
-    }
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [searchQuery, ipAssets]);
 
   // Handle clicks outside of search to close results

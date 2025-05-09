@@ -19,35 +19,35 @@ interface RoyaltyPaymentsProps {
 }
 
 export default function RoyaltyPayments({
-  limit = 4,
+  limit = 20,
   isHomepage = false,
 }: RoyaltyPaymentsProps) {
   const [showAll, setShowAll] = useState(false);
-  const displayLimit = showAll ? undefined : limit;
+  const initialLimit = isHomepage ? 5 : 3;
 
-  // Fetch royalty payments from our new API endpoint
+  // Fetch all available royalty payments
   const {
-    data: royaltyPayments = [],
+    data: allRoyaltyPayments = [],
     isLoading,
     error,
   } = useQuery<EnrichedRoyaltyPayment[]>({
-    queryKey: ["featuredRoyalties", limit],
+    queryKey: ["featuredRoyalties"],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/featured-royalties?limit=${limit * 2}`
-      );
+      const response = await fetch(`/api/featured-royalties?limit=40`);
       if (!response.ok) {
         throw new Error("Failed to fetch royalty payments");
       }
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes (matching the API revalidate setting)
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Get the payments limited to the display limit
-  const visiblePayments = displayLimit
-    ? royaltyPayments.slice(0, displayLimit)
-    : royaltyPayments;
+  // Total available is capped at the limit
+  const totalAvailable = Math.min(limit, allRoyaltyPayments.length);
+
+  // Get the payments to display - either the initial count or all up to the limit
+  const displayLimit = showAll ? limit : initialLimit;
+  const visiblePayments = allRoyaltyPayments.slice(0, displayLimit);
 
   // Format address for display
   const formatAddress = (address: string) => {
@@ -124,7 +124,7 @@ export default function RoyaltyPayments({
     );
   }
 
-  if (visiblePayments.length === 0) {
+  if (allRoyaltyPayments.length === 0) {
     return (
       <div className="bg-cardBg rounded-md border border-border">
         {!isHomepage && (
@@ -152,7 +152,8 @@ export default function RoyaltyPayments({
               <h3 className="text-sm font-semibold">Recent Royalty Payments</h3>
             </div>
             <span className="text-xs text-textMuted">
-              {royaltyPayments.length} payments
+              {showAll ? totalAvailable : initialLimit} of {totalAvailable}{" "}
+              payments
             </span>
           </div>
           <p className="text-xs text-textMuted">
@@ -224,14 +225,15 @@ export default function RoyaltyPayments({
           )}
         </AnimatePresence>
 
-        {royaltyPayments.length > limit && (
+        {/* Show the button if we have more than the initial limit */}
+        {totalAvailable > initialLimit && (
           <button
             onClick={toggleViewAll}
             className="w-full mt-1 py-1.5 px-3 text-xs flex items-center justify-center text-accentGreen border border-border rounded-md hover:bg-accentGreen/5 transition-colors"
           >
             {showAll
               ? "Show Less"
-              : `View All Royalty Payments (${royaltyPayments.length})`}
+              : `View All Royalty Payments (${totalAvailable})`}
             <ChevronRight
               className={`h-3 w-3 ml-1 transition-transform ${
                 showAll ? "rotate-90" : ""
