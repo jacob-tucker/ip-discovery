@@ -189,23 +189,25 @@ export default function IPDetails({ ip }: IPDetailsProps) {
             </a>
           </div>
 
-          <div className="text-xs text-textMuted mt-1 flex items-center justify-between border-t border-border/30 pt-2">
-            <span className="text-[10px]">Asset Hash:</span>
-            <div className="flex items-center">
-              <span
-                className="font-mono text-[9px] truncate max-w-[100px]"
-                title={ip.mediaHash}
-              >
-                {ip.mediaHash.substring(0, 10)}...
-              </span>
-              <button
-                onClick={() => copyToClipboard(ip.mediaHash)}
-                className="ml-1 text-textMuted hover:text-accentPurple transition-colors"
-              >
-                <Copy className="h-2.5 w-2.5" />
-              </button>
+          {ip.mediaHash && (
+            <div className="text-xs text-textMuted mt-1 flex items-center justify-between border-t border-border/30 pt-2">
+              <span className="text-[10px]">Asset Hash:</span>
+              <div className="flex items-center">
+                <span
+                  className="font-mono text-[9px] truncate max-w-[100px]"
+                  title={ip.mediaHash}
+                >
+                  {ip.mediaHash.substring(0, 10)}...
+                </span>
+                <button
+                  onClick={() => copyToClipboard(ip.mediaHash)}
+                  className="ml-1 text-textMuted hover:text-accentPurple transition-colors"
+                >
+                  <Copy className="h-2.5 w-2.5" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
