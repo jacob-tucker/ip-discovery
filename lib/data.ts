@@ -5,13 +5,7 @@ import { featuredIPIds } from "@/data/featured-ipids";
 
 // Helper function to get base URL - used consistently across all functions
 export const getBaseUrl = (): string => {
-  // In the browser, we can use relative URLs
-  if (typeof window !== "undefined") {
-    return "";
-  }
-
-  // In server-side code, we need absolute URLs
-  // Use VERCEL_URL in production, localhost in development
+  console.log(process.env.VERCEL_URL);
   return process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : "http://localhost:3000";
