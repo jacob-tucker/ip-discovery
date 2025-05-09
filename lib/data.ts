@@ -1,26 +1,7 @@
 import { IPAsset } from "@/types/ip";
 import { RoyaltyPayment } from "@/types/royalty";
 import { DetailedLicenseTerms } from "@/types/license";
-import ipAssets from "@/data/ip-assets.json";
-
-// Enrich local data with ipId (using title as a fallback)
-const enrichedIPAssets = ipAssets.map((asset) => ({
-  ...asset,
-  ipId: asset.ipId || asset.title, // Ensure ipId exists
-}));
-
-export const getIPAssets = async (): Promise<IPAsset[]> => {
-  return enrichedIPAssets as IPAsset[];
-};
-
-export const getIPAssetById = async (ipId: string): Promise<IPAsset | null> => {
-  const assets = await getIPAssets();
-  return (
-    assets.find(
-      (asset) => asset.ipId === ipId // Strict matching by ipId only
-    ) || null
-  );
-};
+import { featuredIPIds } from "@/data/featured-ipids";
 
 export const getIPAssetMetadataFromStory = async (
   ipId: string
@@ -62,8 +43,16 @@ export const getAssetDataFromStory = async (
   [key: string]: any;
 } | null> => {
   try {
+    // Determine if we're in a browser or server environment
+    const isServer = typeof window === "undefined";
+    const baseUrl = isServer
+      ? process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000"
+      : "";
+
     // Fetch from our API endpoint which handles caching
-    const response = await fetch(`/api/assets/${ipId}`, {
+    const response = await fetch(`${baseUrl}/api/assets/${ipId}`, {
       next: { revalidate: 300 }, // 5 minutes, matching the API's revalidate setting
     });
 
@@ -80,29 +69,36 @@ export const getAssetDataFromStory = async (
   }
 };
 
+// Helper function to get base URL
+const getBaseUrl = (): string => {
+  const isServer = typeof window === "undefined";
+  return isServer
+    ? process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000"
+    : "";
+};
+
 export const getStoryIPAssetById = async (
   ipId: string
 ): Promise<IPAsset | null> => {
   try {
+    const baseUrl = getBaseUrl();
+
     // Fetch from our API endpoint which handles caching
-    const response = await fetch(`/api/ip/${ipId}`, {
-      // Use Next.js cache: 'force-cache' for maximum caching
-      // or use 'no-store' to bypass the cache
+    const response = await fetch(`${baseUrl}/api/ip/${ipId}`, {
+      // Use Next.js cache with revalidation to balance freshness with performance
       next: { revalidate: 900 }, // 15 minutes, matching the API's revalidate setting
     });
 
-    console.log("response", response);
-
     if (!response.ok) {
       console.error(`API error: ${response.status} ${response.statusText}`);
-      // No fallback to mock data
       return null;
     }
 
     return await response.json();
   } catch (error) {
-    console.error("Error fetching IP asset via API:", error);
-    // No fallback to mock data
+    console.error(`Error fetching IP asset ${ipId} via API:`, error);
     return null;
   }
 };
@@ -125,12 +121,11 @@ function getMediaType(url?: string): string {
 
 export const getAllRoyaltyPayments = async (): Promise<RoyaltyPayment[]> => {
   console.log(
-    "Getting all royalty payments - using real API data instead of mock data"
+    "Getting all royalty payments - using featured IP IDs from config"
   );
 
-  // Get all available IPs to fetch their royalty data
-  const ipAssets = await getIPAssets();
-  const ipIds = ipAssets.map((asset) => asset.ipId);
+  // Use featured IP IDs instead of the hard-coded assets
+  const ipIds = featuredIPIds;
 
   // Collect royalty data for all IPs
   const allRoyalties: RoyaltyPayment[] = [];
@@ -169,8 +164,10 @@ export const getRoyaltyPaymentsForIP = async (
   );
 
   try {
+    const baseUrl = getBaseUrl();
+
     // Fetch from our API endpoint which handles caching
-    const response = await fetch(`/api/royalties/${ipId}`, {
+    const response = await fetch(`${baseUrl}/api/royalties/${ipId}`, {
       next: { revalidate: 300 }, // 5 minutes, matching the API's revalidate setting
     });
 
@@ -210,8 +207,10 @@ export const getLicensesForIP = async (
   console.log("getLicensesForIP called for IP:", ipId);
 
   try {
+    const baseUrl = getBaseUrl();
+
     // Fetch from our API endpoint which handles caching
-    const response = await fetch(`/api/licenses/${ipId}`, {
+    const response = await fetch(`${baseUrl}/api/licenses/${ipId}`, {
       next: { revalidate: 900 }, // 15 minutes, matching the API's revalidate setting
     });
 
@@ -239,8 +238,10 @@ export const getLicensesForIP = async (
  */
 export const getDisputesForIP = async (ipId: string): Promise<number> => {
   try {
+    const baseUrl = getBaseUrl();
+
     // Fetch from our API endpoint which handles caching
-    const response = await fetch(`/api/disputes/${ipId}`, {
+    const response = await fetch(`${baseUrl}/api/disputes/${ipId}`, {
       next: { revalidate: 300 }, // 5 minutes, matching the API's revalidate setting
     });
 

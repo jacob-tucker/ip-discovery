@@ -5,6 +5,21 @@ import { IPAsset } from "@/types/ip";
 // Set cache control headers for 15 minutes
 export const revalidate = 900; // 15 minutes in seconds
 
+// Helper function to transform IPFS URLs
+function transformIpfsUrl(url: string): string {
+  if (!url) return url;
+
+  // Check if it's an IPFS URL in the format ipfs://{cid}
+  if (url.startsWith("ipfs://")) {
+    // Extract the CID (everything after ipfs://)
+    const cid = url.substring(7);
+    // Transform to https://ipfs.io/ipfs/{cid}
+    return `https://ipfs.io/ipfs/${cid}`;
+  }
+
+  return url;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ ipId: string }> }
@@ -39,21 +54,25 @@ export async function GET(
 
       const metadataJson = await response.json();
 
+      // Transform any IPFS URLs in the metadata
+      const image = transformIpfsUrl(
+        metadataJson.image || "/placeholder-image.png"
+      );
+      const mediaUrl = transformIpfsUrl(
+        metadataJson.mediaUrl || metadataJson.image || "/placeholder-image.png"
+      );
+
       // Construct the IPAsset with defaults for missing fields
       const ipAsset: IPAsset = {
         ipId: ipId,
         title: metadataJson.title || metadataJson.name || "Unknown IP",
         description: metadataJson.description || "No description available",
         createdAt: metadataJson.createdAt || new Date().toISOString(),
-        image: metadataJson.image || "/placeholder-image.png",
+        image: image,
         imageHash: metadataJson.imageHash || "",
-        mediaUrl:
-          metadataJson.mediaUrl ||
-          metadataJson.image ||
-          "/placeholder-image.png",
+        mediaUrl: mediaUrl,
         mediaHash: metadataJson.mediaHash || metadataJson.imageHash || "",
-        mediaType:
-          metadataJson.mediaType || getMediaType(metadataJson.mediaUrl),
+        mediaType: metadataJson.mediaType || getMediaType(mediaUrl),
         creators: metadataJson.creators || [],
         ipType: metadataJson.ipType || "Asset",
         metadataUri: metadataUri,

@@ -13,7 +13,6 @@ import {
   Disc,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getIPAssets } from "@/lib/data";
 import { IPAsset } from "@/types/ip";
 
 export default function Header() {
@@ -21,11 +20,20 @@ export default function Header() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchResults, setSearchResults] = useState<IPAsset[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
-  // Fetch all IP assets
-  const { data: ipAssets = [] } = useQuery({
-    queryKey: ["ipAssets"],
-    queryFn: getIPAssets,
+  // Fetch all featured IP assets for search
+  const { data: ipAssets = [] } = useQuery<IPAsset[]>({
+    queryKey: ["featuredIpAssets"],
+    queryFn: async () => {
+      const response = await fetch("/api/featured-ips");
+      if (!response.ok) {
+        throw new Error("Failed to fetch featured IPs");
+      }
+      return response.json();
+    },
+    // Set a reasonable stale time to minimize network requests
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Filter results based on search query
@@ -61,6 +69,11 @@ export default function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Handle image error
+  const handleImageError = (ipId: string) => {
+    setImageErrors((prev) => ({ ...prev, [ipId]: true }));
+  };
 
   // Get appropriate icon for media type
   const getMediaIcon = (mediaType: string) => {
@@ -182,12 +195,21 @@ export default function Header() {
                     }}
                   >
                     <div className="relative h-10 w-10 overflow-hidden rounded bg-background mr-3">
-                      <Image
-                        src={result.image}
-                        alt={result.title}
-                        fill
-                        className="object-cover"
-                      />
+                      {imageErrors[result.ipId] ? (
+                        <div className="h-10 w-10 flex items-center justify-center bg-cardBg">
+                          <ImageIcon className="h-5 w-5 text-textMuted" />
+                        </div>
+                      ) : (
+                        <Image
+                          src={result.image || "/placeholder-image.png"}
+                          alt={result.title}
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                          onError={() => handleImageError(result.ipId)}
+                          unoptimized={true}
+                        />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">
