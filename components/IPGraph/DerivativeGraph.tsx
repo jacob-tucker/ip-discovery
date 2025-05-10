@@ -8,6 +8,7 @@ import { getNodeColor, getLinkColor, applyFilters } from '@/lib/utils/graph/grap
 import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
 import { GraphData, GraphNode, GraphLink, NodeType } from '@/types/graph';
 import GraphControls from './GraphControls';
+import GraphLegend from './GraphLegend';
 import '../../styles/graph.css';
 
 interface DerivativeGraphProps {
@@ -17,6 +18,8 @@ interface DerivativeGraphProps {
   onNodeClick?: (node: GraphNode) => void;
   className?: string;
   showControls?: boolean;
+  showLegend?: boolean;
+  legendPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 }
 
 const DEFAULT_NODE_SIZE = 6;
@@ -43,7 +46,9 @@ export default function DerivativeGraph({
   height = 600,
   onNodeClick,
   className = '',
-  showControls = true
+  showControls = true,
+  showLegend = true,
+  legendPosition = 'bottom-left'
 }: DerivativeGraphProps) {
   // References
   const graphRef = useRef<any>(null);
@@ -435,10 +440,18 @@ export default function DerivativeGraph({
           onReset={handleReset}
         />
       )}
-      
+
+      {/* Graph Legend */}
+      {showLegend && (
+        <GraphLegend
+          position={legendPosition}
+          compact={dimensions.width < 640 || dimensions.height < 500}
+        />
+      )}
+
       {/* Basic zoom controls (always visible) */}
       <div className="graph-controls">
-        <button 
+        <button
           className={`graph-controls-button ${viewPreferences.darkMode ? 'dark' : ''}`}
           onClick={handleZoomIn}
           aria-label="Zoom in"
@@ -448,7 +461,7 @@ export default function DerivativeGraph({
             <path d="M4 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <button 
+        <button
           className={`graph-controls-button ${viewPreferences.darkMode ? 'dark' : ''}`}
           onClick={handleZoomOut}
           aria-label="Zoom out"
@@ -457,7 +470,7 @@ export default function DerivativeGraph({
             <path d="M4 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <button 
+        <button
           className={`graph-controls-button ${viewPreferences.darkMode ? 'dark' : ''}`}
           onClick={handleReset}
           aria-label="Reset view"
@@ -469,7 +482,7 @@ export default function DerivativeGraph({
           </svg>
         </button>
       </div>
-      
+
       {/* Node tooltip (shown when hovering) */}
       {hoveredNode && (
         <div 

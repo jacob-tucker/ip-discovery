@@ -3,3 +3,4 @@
 
 export { default as DerivativeGraph } from './DerivativeGraph';
 export { default as GraphControls } from './GraphControls';
+export { default as GraphLegend } from './GraphLegend';
