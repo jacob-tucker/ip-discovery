@@ -1042,12 +1042,58 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Makes the element visible when focused */
+.sr-only-focusable:focus,
+.sr-only-focusable:active {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  padding: 1rem;
+  background-color: #f8fafc;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  margin: 1rem;
+  max-width: 80%;
+  z-index: 100;
+}
+
+/* Dark mode for sr-only-focusable */
+.dark .sr-only-focusable:focus,
+.dark .sr-only-focusable:active {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-color: #475569;
+}
+
 /* Focus styles for accessibility */
 .graph-controls-button:focus-visible,
 .graph-search-input:focus-visible,
-.retry-button:focus-visible {
-  outline: 2px solid #3b82f6;
+.retry-button:focus-visible,
+.tooltip-details-button:focus-visible,
+.tooltip-close:focus-visible,
+.close-button:focus-visible,
+.keyboard-action-button:focus-visible,
+.keyboard-controls-toggle:focus-visible {
+  outline: 3px solid #3b82f6;
   outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
 /* Responsive adjustments */

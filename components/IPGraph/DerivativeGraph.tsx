@@ -12,6 +12,8 @@ import GraphLegend from './GraphLegend';
 import GraphTooltip from './GraphTooltip';
 import PathHighlight from './PathHighlight';
 import KeyboardControls from './KeyboardControls';
+import AccessibilityAnnouncer from './AccessibilityAnnouncer';
+import GraphDescription from './GraphDescription';
 import { GraphLoadingState, GraphStateHandler } from './GraphLoadingState';
 import { GraphErrorBoundary, withGraphErrorBoundary } from './GraphErrorBoundary';
 import '../../styles/graph.css';
@@ -25,6 +27,11 @@ interface DerivativeGraphProps {
   showControls?: boolean;
   showLegend?: boolean;
   legendPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  /**
+   * Shows a text-based representation of the graph (for screen readers)
+   * @default false
+   */
+  showDescription?: boolean;
 }
 
 // Graph rendering constants
@@ -75,7 +82,8 @@ const DerivativeGraphInner = ({
   className = '',
   showControls = true,
   showLegend = true,
-  legendPosition = 'bottom-left'
+  legendPosition = 'bottom-left',
+  showDescription = false
 }: DerivativeGraphProps) => {
   // References
   const graphRef = useRef<any>(null);
@@ -86,6 +94,8 @@ const DerivativeGraphInner = ({
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [focusedNodeIndex, setFocusedNodeIndex] = useState(-1);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [announcement, setAnnouncement] = useState<string>('');
+  const [isAssertive, setIsAssertive] = useState(false);
   const [touchState, setTouchState] = useState<TouchState>({
     active: false,
     startX: 0,
@@ -297,6 +307,12 @@ const DerivativeGraphInner = ({
     }
   }, [graphData, isLoading, setLastUpdated]);
   
+  // Function to announce screen reader messages
+  const announce = useCallback((message: string, assertive: boolean = false) => {
+    setAnnouncement(message);
+    setIsAssertive(assertive);
+  }, []);
+
   // Handle node click with enhanced animation and path highlighting
   const handleNodeClick = useCallback((node: GraphNode) => {
     // Don't re-process if already selected
@@ -304,6 +320,9 @@ const DerivativeGraphInner = ({
 
     setSelectedNode(node.id);
     highlightNode(node.id);
+
+    // Announce node selection to screen readers
+    announce(`Selected node: ${node.title}. Type: ${node.type}.${node.data?.relationshipType ? ` Relationship: ${node.data.relationshipType}.` : ''}`, true);
 
     // Find and highlight path from root to this node
     if (graphData && graphData.metadata?.rootId) {
@@ -315,6 +334,18 @@ const DerivativeGraphInner = ({
           // Animate path highlighting
           setTimeout(() => {
             highlightPath(pathLinks);
+
+            // Get path description for announcement
+            const pathDescription = findRelationshipPath(
+              graphData,
+              rootId,
+              node.id
+            ).description;
+
+            // Announce path to screen readers
+            if (pathDescription) {
+              announce(`Path found: ${pathDescription}`, false);
+            }
           }, 100); // Small delay for better visual effect
         }
       }
@@ -378,12 +409,17 @@ const DerivativeGraphInner = ({
   // Handle node hover
   const handleNodeHover = useCallback((node: GraphNode | null) => {
     setHoveredNode(node);
-    
+
     // Only change cursor on non-touch devices
     if (!isMobile) {
       document.body.style.cursor = node ? 'pointer' : 'default';
     }
-  }, [isMobile]);
+
+    // Announce hover to screen readers (if not in active touch mode)
+    if (node && !touchState.active) {
+      announce(`Hovering over: ${node.title}. Type: ${node.type}.`, false);
+    }
+  }, [isMobile, announce, touchState.active]);
   
   // Calculate pinch distance between two touch points
   const getPinchDistance = useCallback((e: TouchEvent) => {
@@ -1095,18 +1131,20 @@ const DerivativeGraphInner = ({
       const newZoom = zoomLevel * 1.2;
       setZoomLevel(newZoom);
       graphRef.current.zoom(newZoom, ANIMATION_DURATION);
+      announce(`Zoomed in. Current zoom level: ${Math.round(newZoom * 100)}%`, false);
     }
-  }, [zoomLevel, setZoomLevel]);
-  
+  }, [zoomLevel, setZoomLevel, announce]);
+
   // Zoom out handler
   const handleZoomOut = useCallback(() => {
     if (graphRef.current) {
       const newZoom = zoomLevel / 1.2;
       setZoomLevel(newZoom);
       graphRef.current.zoom(newZoom, ANIMATION_DURATION);
+      announce(`Zoomed out. Current zoom level: ${Math.round(newZoom * 100)}%`, false);
     }
-  }, [zoomLevel, setZoomLevel]);
-  
+  }, [zoomLevel, setZoomLevel, announce]);
+
   // Reset view handler
   const handleReset = useCallback(() => {
     if (graphRef.current && graphData) {
@@ -1116,16 +1154,18 @@ const DerivativeGraphInner = ({
         setSelectedNode(null);
         highlightNode(null);
         highlightPath(null);
-        
+
         graphRef.current.centerAt(
-          rootNode.x || 0, 
-          rootNode.y || 0, 
+          rootNode.x || 0,
+          rootNode.y || 0,
           ANIMATION_DURATION
         );
         graphRef.current.zoom(1, ANIMATION_DURATION);
+
+        announce(`View reset. Centered on root node: ${rootNode.title}`, true);
       }
     }
-  }, [graphData, setZoomLevel, setSelectedNode, highlightNode, highlightPath]);
+  }, [graphData, setZoomLevel, setSelectedNode, highlightNode, highlightPath, announce]);
 
   // Use GraphStateHandler to handle loading, error, and empty states
   return (
@@ -1149,45 +1189,58 @@ const DerivativeGraphInner = ({
         onTouchEnd={handleTouchEnd}
         data-testid="derivative-graph-container"
       >
+        {/* Accessibility announcer for dynamic updates */}
+        <AccessibilityAnnouncer
+          message={announcement}
+          assertive={isAssertive}
+        />
+
         {/* Graph visualization */}
-        {graphData && (
-          <ForceGraph2D
-            ref={graphRef}
-            graphData={graphData}
-            width={dimensions.width}
-            height={dimensions.height}
-            backgroundColor={viewPreferences.darkMode ? DARK_CANVAS_BG_COLOR : CANVAS_BG_COLOR}
-            nodeId="id"
-            nodeLabel="title"
-            nodeRelSize={DEFAULT_NODE_SIZE}
-            nodeCanvasObject={paintNode}
-            linkCanvasObject={paintLink}
-            linkDirectionalParticles={isMobile ? 0 : 2} // Disable particles on mobile for performance
-            linkDirectionalParticleSpeed={0.003}
-            onNodeClick={handleNodeClick}
-            onNodeHover={handleNodeHover}
-            cooldownTime={isMobile ? 2000 : 3000} // Shorter cooldown on mobile
-            d3AlphaDecay={viewPreferences.physics?.enabled ? 0.02 : 1}
-            d3VelocityDecay={viewPreferences.physics?.friction || 0.3}
-            // Physics settings from the store
-            warmupTicks={viewPreferences.physics?.enabled ? (isMobile ? 50 : 100) : 0}
-            cooldownTicks={viewPreferences.physics?.enabled ? (isMobile ? 25 : 50) : 0}
-            d3Force={viewPreferences.physics?.enabled ? {
-              charge: {
-                strength: viewPreferences.physics.chargeStrength || -80,
-                distanceMax: 300
-              },
-              link: {
-                strength: link => {
-                  // Apply strength modifiers based on link type and store settings
-                  const baseStrength = link.strength || 0.5;
-                  return baseStrength * ((viewPreferences.physics.linkStrength || 50) / 50);
+        <div
+          role="application"
+          aria-label="Derivative Galaxy Graph"
+          aria-description="A force-directed graph showing ancestor-derivative relationships. Use Tab to enter keyboard navigation mode."
+        >
+          {graphData && (
+            <ForceGraph2D
+              ref={graphRef}
+              graphData={graphData}
+              width={dimensions.width}
+              height={dimensions.height}
+              backgroundColor={viewPreferences.darkMode ? DARK_CANVAS_BG_COLOR : CANVAS_BG_COLOR}
+              nodeId="id"
+              nodeLabel="title"
+              nodeRelSize={DEFAULT_NODE_SIZE}
+              nodeCanvasObject={paintNode}
+              linkCanvasObject={paintLink}
+              linkDirectionalParticles={isMobile ? 0 : 2} // Disable particles on mobile for performance
+              linkDirectionalParticleSpeed={0.003}
+              onNodeClick={handleNodeClick}
+              onNodeHover={handleNodeHover}
+              cooldownTime={isMobile ? 2000 : 3000} // Shorter cooldown on mobile
+              d3AlphaDecay={viewPreferences.physics?.enabled ? 0.02 : 1}
+              d3VelocityDecay={viewPreferences.physics?.friction || 0.3}
+              // Physics settings from the store
+              warmupTicks={viewPreferences.physics?.enabled ? (isMobile ? 50 : 100) : 0}
+              cooldownTicks={viewPreferences.physics?.enabled ? (isMobile ? 25 : 50) : 0}
+              d3Force={viewPreferences.physics?.enabled ? {
+                charge: {
+                  strength: viewPreferences.physics.chargeStrength || -80,
+                  distanceMax: 300
                 },
-                distance: link => link.distance || 30
-              }
-            } : undefined}
-          />
-        )}
+                link: {
+                  strength: link => {
+                    // Apply strength modifiers based on link type and store settings
+                    const baseStrength = link.strength || 0.5;
+                    return baseStrength * ((viewPreferences.physics.linkStrength || 50) / 50);
+                  },
+                  distance: link => link.distance || 30
+                }
+              } : undefined}
+              aria-busy={isLoading ? 'true' : 'false'}
+            />
+          )}
+        
         
         {/* Graph Controls - Responsive with touch support */}
         {showControls && (
@@ -1200,6 +1253,7 @@ const DerivativeGraphInner = ({
             isMobile={isMobile}
           />
         )}
+        </div> {/* End of role="application" div */}
 
         {/* Graph Legend - Responsive */}
         {showLegend && (
@@ -1210,13 +1264,18 @@ const DerivativeGraphInner = ({
         )}
 
         {/* Basic zoom controls (always visible) - Larger on mobile */}
-        <div className={`graph-controls ${isMobile ? 'mobile' : ''}`}>
+        <div
+          className={`graph-controls ${isMobile ? 'mobile' : ''}`}
+          role="toolbar"
+          aria-label="Graph zoom controls"
+        >
           <button
             className={`graph-controls-button ${viewPreferences.darkMode ? 'dark' : ''}`}
             onClick={handleZoomIn}
             aria-label="Zoom in"
+            aria-keyshortcuts="+"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M12 4V20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M4 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -1225,8 +1284,9 @@ const DerivativeGraphInner = ({
             className={`graph-controls-button ${viewPreferences.darkMode ? 'dark' : ''}`}
             onClick={handleZoomOut}
             aria-label="Zoom out"
+            aria-keyshortcuts="-"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M4 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -1234,8 +1294,9 @@ const DerivativeGraphInner = ({
             className={`graph-controls-button ${viewPreferences.darkMode ? 'dark' : ''}`}
             onClick={handleReset}
             aria-label="Reset view"
+            aria-keyshortcuts="r"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M3 4V8H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M3 8L7 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1301,11 +1362,25 @@ const DerivativeGraphInner = ({
         
         {/* Mobile hint overlay for first-time users */}
         {isMobile && (
-          <div className="mobile-hint-overlay">
+          <div
+            className="mobile-hint-overlay"
+            role="tooltip"
+            aria-live="polite"
+          >
             <div className="hint-container">
               <p>Tap to select • Double-tap to zoom • Pinch to zoom • Press and hold for details</p>
             </div>
           </div>
+        )}
+
+        {/* Text-based representation for screen readers */}
+        {showDescription && graphData && (
+          <GraphDescription
+            graphData={graphData}
+            selectedNode={selectedNode}
+            isDarkMode={viewPreferences.darkMode}
+            className="sr-only sr-only-focusable"
+          />
         )}
 
         {/* Keyboard navigation controls and focus indicator */}
