@@ -6,11 +6,11 @@ import { easeCubicInOut } from 'd3-ease';
 import { useGraphData } from '@/lib/hooks/useDerivativeData';
 import { getNodeColor, getLinkColor, getNodeLabel, findRelationshipPath } from '@/lib/utils/graph/graph-transform';
 import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
-import { GraphData, GraphNode, GraphLink, NodeType } from '@/types/graph';
+import { GraphNode, GraphLink, NodeType } from '@/types/graph';
 
 // Import critical components normally
 import GraphControls from './GraphControls';
-import { GraphLoadingState, GraphStateHandler } from './GraphLoadingState';
+import { GraphStateHandler } from './GraphLoadingState';
 import { GraphErrorBoundary } from './GraphErrorBoundary';
 import '../../styles/graph.css';
 
@@ -59,7 +59,6 @@ const DOUBLE_TAP_DELAY = 300; // milliseconds
 const LONG_PRESS_DELAY = 500; // milliseconds
 const PINCH_SCALE_FACTOR = 0.01; // How much pinching affects zoom
 const TAP_DISTANCE_THRESHOLD = 10; // Maximum movement allowed for a tap
-const LONG_PRESS_DISTANCE_THRESHOLD = 10; // Maximum movement allowed for long press
 
 // Touch gesture detector for handling mobile interactions
 interface TouchState {
@@ -93,7 +92,7 @@ const DerivativeGraphInner = ({
   showDescription = false
 }: DerivativeGraphProps) => {
   // References
-  const graphRef = useRef<any>(null);
+  const graphRef = useRef<{ centerAt: Function; zoom: Function; cameraPosition: Function | null; screen2GraphCoords: Function; canvas: Function }>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
   // State
@@ -116,12 +115,12 @@ const DerivativeGraphInner = ({
     activeNode: null
   });
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Get graph data using the enhanced hooks with proper state management
   const { data: graphData, error } = useGraphData(ipId);
-  
+
   // Use graph filters from Zustand store
-  const { 
+  const {
     viewPreferences,
     filters,
     selectedNode,
@@ -131,8 +130,7 @@ const DerivativeGraphInner = ({
     zoomLevel,
     setZoomLevel,
     isLoading,
-    setLastUpdated,
-    setError
+    setLastUpdated
   } = useGraphFilters();
   
   // Check if we're on a mobile device
@@ -285,11 +283,11 @@ const DerivativeGraphInner = ({
         }
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
+
   // Focus on root node when graph data is loaded or filters change
   useEffect(() => {
     if (graphData && graphRef.current && !isLoading) {
@@ -298,7 +296,7 @@ const DerivativeGraphInner = ({
       if (rootNode) {
         // Center the view on the root node with animation
         graphRef.current.centerAt(
-          rootNode.x || 0, 
+          rootNode.x || 0,
           rootNode.y || 0,
           ANIMATION_DURATION
         );
@@ -306,6 +304,12 @@ const DerivativeGraphInner = ({
       }
     }
   }, [graphData, isLoading, zoomLevel]);
+
+  // Function to announce screen reader messages
+  const announce = useCallback((message: string, assertive = false) => {
+    setAnnouncement(message);
+    setIsAssertive(assertive);
+  }, []);
   
   // Update timestamp when data is loaded
   useEffect(() => {
@@ -569,9 +573,9 @@ const DerivativeGraphInner = ({
   }, [touchState, getPinchDistance, setZoomLevel]);
   
   // Handle touch end event
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+  const handleTouchEnd = useCallback((_e: React.TouchEvent) => {
     if (!touchState.active) return;
-    
+
     const now = Date.now();
     const touchDuration = now - touchState.lastTapTime;
     const isDoubleTap = touchDuration < DOUBLE_TAP_DELAY && !touchState.longPressMoved;
@@ -1207,6 +1211,16 @@ const DerivativeGraphInner = ({
     }
   }, [graphData, setZoomLevel, setSelectedNode, highlightNode, highlightPath, announce]);
 
+  // Zoom in handler - need to define this before other handlers that depend on it
+  const handleZoomIn = useCallback(() => {
+    if (graphRef.current) {
+      const newZoom = zoomLevel * 1.2;
+      setZoomLevel(newZoom);
+      graphRef.current.zoom(newZoom, ANIMATION_DURATION);
+      announce(`Zoomed in. Current zoom level: ${Math.round(newZoom * 100)}%`, false);
+    }
+  }, [zoomLevel, setZoomLevel, announce]);
+
   // Use GraphStateHandler to handle loading, error, and empty states
   return (
     <GraphStateHandler
@@ -1241,7 +1255,7 @@ const DerivativeGraphInner = ({
         <div
           role="application"
           aria-label="Derivative Galaxy Graph"
-          aria-description="A force-directed graph showing ancestor-derivative relationships. Use Tab to enter keyboard navigation mode."
+          aria-describedby="graph-description"
         >
           {graphData && (
             <ForceGraph2D
@@ -1271,12 +1285,12 @@ const DerivativeGraphInner = ({
                   distanceMax: 300
                 },
                 link: {
-                  strength: link => {
+                  strength: (link: any) => {
                     // Apply strength modifiers based on link type and store settings
                     const baseStrength = link.strength || 0.5;
                     return baseStrength * ((viewPreferences.physics.linkStrength || 50) / 50);
                   },
-                  distance: link => link.distance || 30
+                  distance: (link: any) => link.distance || 30
                 }
               } : undefined}
               aria-busy={isLoading ? 'true' : 'false'}

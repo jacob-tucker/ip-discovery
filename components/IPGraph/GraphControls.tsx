@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Sliders,
   Search,
@@ -14,7 +14,6 @@ import {
   X,
   ChevronRight,
   ChevronDown,
-  MoreHorizontal,
   Minimize2,
   Maximize2
 } from 'lucide-react';
@@ -41,7 +40,7 @@ const useDebounce = <T,>(value: T, delay: number): T => {
 };
 
 interface GraphControlsProps {
-  graphRef?: React.MutableRefObject<any>;
+  graphRef?: React.MutableRefObject<unknown>;
   rootId: string;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
@@ -249,7 +248,7 @@ export default function GraphControls({
   }, []);
 
   // Handle physics settings change
-  const handlePhysicsChange = useCallback((setting: string, value: any) => {
+  const handlePhysicsChange = useCallback((setting: string, value: number | boolean) => {
     setViewPreferences({
       physics: {
         ...viewPreferences.physics,
