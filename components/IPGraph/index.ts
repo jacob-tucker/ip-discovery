@@ -10,6 +10,8 @@ export { default as GraphLegend } from './GraphLegend';
 // Error handling and loading state components
 export * from './GraphErrorBoundary';
 export * from './GraphLoadingState';
+export { default as ErrorFallback } from './ErrorFallback';
+export { SkeletonLoader, SkeletonControls } from './SkeletonLoader';
 
 // Re-export hooks for convenient access
 export { useGraphFilters, useFilteredGraphState } from '@/lib/hooks/useGraphFilters';
