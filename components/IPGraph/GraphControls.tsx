@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  Sliders, 
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import {
+  Sliders,
   Search,
-  Filter, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCcw, 
-  Moon, 
-  Sun, 
+  Filter,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Moon,
+  Sun,
   Tag,
   X,
   ChevronRight,
@@ -22,6 +22,23 @@ import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
 import { NodeType, LinkType, RelationshipType } from '@/types/graph';
 import { getNodeColor, getLinkColor } from '@/lib/utils/graph/graph-transform';
 import { cn } from '@/lib/utils';
+
+// Debounce utility function
+const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 interface GraphControlsProps {
   graphRef?: React.MutableRefObject<any>;
@@ -153,41 +170,83 @@ export default function GraphControls({
     });
   }, []);
 
-  // Handle node type filter toggle
+  // Internal state for debounced filters
+  const [nodeTypeState, setNodeTypeState] = useState<NodeType[]>(filters.nodeTypes);
+  const [linkTypeState, setLinkTypeState] = useState<LinkType[]>(filters.linkTypes);
+  const [relationshipTypeState, setRelationshipTypeState] = useState<RelationshipType[]>(filters.relationshipTypes || []);
+  const [maxDistanceState, setMaxDistanceState] = useState<number>(filters.maxDistance);
+
+  // Debounced filter values (150ms to match performance requirement)
+  const debouncedNodeTypes = useDebounce(nodeTypeState, 150);
+  const debouncedLinkTypes = useDebounce(linkTypeState, 150);
+  const debouncedRelationshipTypes = useDebounce(relationshipTypeState, 150);
+  const debouncedMaxDistance = useDebounce(maxDistanceState, 150);
+
+  // Apply debounced filters to the store
+  useEffect(() => {
+    setFilters({ nodeTypes: debouncedNodeTypes });
+  }, [debouncedNodeTypes, setFilters]);
+
+  useEffect(() => {
+    setFilters({ linkTypes: debouncedLinkTypes });
+  }, [debouncedLinkTypes, setFilters]);
+
+  useEffect(() => {
+    setFilters({ relationshipTypes: debouncedRelationshipTypes });
+  }, [debouncedRelationshipTypes, setFilters]);
+
+  useEffect(() => {
+    setFilters({ maxDistance: debouncedMaxDistance });
+  }, [debouncedMaxDistance, setFilters]);
+
+  // Sync state with filters when they're reset externally
+  useEffect(() => {
+    setNodeTypeState(filters.nodeTypes);
+    setLinkTypeState(filters.linkTypes);
+    setRelationshipTypeState(filters.relationshipTypes || []);
+    setMaxDistanceState(filters.maxDistance);
+  }, [
+    // Only include the specific filter properties we need to sync
+    filters.nodeTypes,
+    filters.linkTypes,
+    filters.relationshipTypes,
+    filters.maxDistance
+  ]);
+
+  // Handle node type filter toggle (updates local state)
   const toggleNodeType = useCallback((type: NodeType) => {
-    setFilters({
-      nodeTypes: filters.nodeTypes.includes(type)
-        ? filters.nodeTypes.filter(t => t !== type)
-        : [...filters.nodeTypes, type]
-    });
-  }, [filters.nodeTypes, setFilters]);
+    setNodeTypeState(prev =>
+      prev.includes(type)
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  }, []);
 
-  // Handle link type filter toggle
+  // Handle link type filter toggle (updates local state)
   const toggleLinkType = useCallback((type: LinkType) => {
-    setFilters({
-      linkTypes: filters.linkTypes.includes(type)
-        ? filters.linkTypes.filter(t => t !== type)
-        : [...filters.linkTypes, type]
-    });
-  }, [filters.linkTypes, setFilters]);
+    setLinkTypeState(prev =>
+      prev.includes(type)
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  }, []);
 
-  // Handle relationship type filter toggle
+  // Handle relationship type filter toggle (updates local state)
   const toggleRelationshipType = useCallback((type: RelationshipType) => {
-    const currentTypes = filters.relationshipTypes || [];
-    setFilters({
-      relationshipTypes: currentTypes.includes(type)
-        ? currentTypes.filter(t => t !== type)
-        : [...currentTypes, type]
-    });
-  }, [filters.relationshipTypes, setFilters]);
+    setRelationshipTypeState(prev =>
+      prev.includes(type)
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  }, []);
 
-  // Handle max distance change
+  // Handle max distance change (updates local state)
   const handleMaxDistanceChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
     if (!isNaN(value) && value >= 1 && value <= 5) {
-      setFilters({ maxDistance: value });
+      setMaxDistanceState(value);
     }
-  }, [setFilters]);
+  }, []);
 
   // Handle physics settings change
   const handlePhysicsChange = useCallback((setting: string, value: any) => {

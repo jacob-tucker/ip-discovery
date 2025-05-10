@@ -3,22 +3,22 @@
  */
 
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
-import { 
-  DerivativeRelationsResponse, 
+import {
+  DerivativeRelationsResponse,
   GraphData,
   GraphFilters,
   GraphNode,
   GraphLink
 } from '@/types/graph';
 import storyProtocolClient from '@/lib/api/story-protocol';
-import { 
-  transformToGraphData, 
+import {
+  transformToGraphData,
   applyFilters,
   findPath
 } from '@/lib/utils/graph/graph-transform';
 import { IPAsset } from '@/types/ip';
 import { useGraphFilters } from './useGraphFilters';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 // Query keys for React Query caching
 export const queryKeys = {
@@ -123,16 +123,17 @@ export function useDerivativeRelations(
  */
 export function useGraphData(ipId: string | null) {
   // Get filter state from Zustand store
-  const { 
-    filters, 
+  const {
+    filters,
     viewPreferences,
     selectedNode,
-    setLoading, 
+    setLoading,
     setError,
     setLastUpdated,
     highlightPath,
   } = useGraphFilters();
-  
+
+  // Memoize filters to prevent unnecessary re-renders
   const {
     nodeTypes,
     linkTypes,
@@ -146,53 +147,75 @@ export function useGraphData(ipId: string | null) {
     maxCreationDate,
     creators,
     tags
-  } = filters;
-  
-  // Fetch derivative relationships with proper options based on filters
-  const derivativesQuery = useDerivativeRelations(ipId, {
+  } = useMemo(() => filters, [filters]);
+
+  // Memoize derivative query options
+  const derivativeOptions = useMemo(() => ({
     maxDepth: Math.max(maxDistance, 2), // Always fetch at least 2 levels deep
     includeDisputes: nodeTypes.includes('disputed'),
     includeSiblings: nodeTypes.includes('sibling') || nodeTypes.includes('related'),
     enabled: !!ipId,
-  });
-  
+  }), [maxDistance, nodeTypes, ipId]);
+
+  // Fetch derivative relationships with proper options based on filters
+  const derivativesQuery = useDerivativeRelations(ipId, derivativeOptions);
+
   // Find the path between the root node and the selected node if any
   const findPathBetweenNodes = useCallback((graphData: GraphData, selectedId: string | null) => {
     if (!selectedId || !graphData || !graphData.metadata?.rootId) return null;
-    
+
     const rootId = graphData.metadata.rootId;
     if (rootId === selectedId) return null; // No path needed if selected node is the root
-    
+
     return findPath(graphData, rootId, selectedId);
   }, []);
-  
+
+  // Memoize queryKey dependencies to prevent unnecessary re-renders
+  const queryKey = useMemo(() => {
+    // Only include filter properties that affect data filtering
+    const filterKey = {
+      nodeTypes,
+      linkTypes,
+      relationshipTypes,
+      searchQuery,
+      maxDistance
+    };
+    return [...queryKeys.graphData(ipId || ''), filterKey];
+  }, [ipId, nodeTypes, linkTypes, relationshipTypes, searchQuery, maxDistance]);
+
+  // Memoize the filter transformation function
+  const transformAndFilter = useCallback((data: DerivativeRelationsResponse): GraphData => {
+    // Transform API data to graph format
+    const graphData = transformToGraphData(data);
+
+    // Apply filters
+    return applyFilters(
+      graphData,
+      nodeTypes,
+      linkTypes,
+      searchQuery,
+      maxDistance,
+      relationshipTypes
+    );
+  }, [nodeTypes, linkTypes, searchQuery, maxDistance, relationshipTypes]);
+
   // Main graph data query with filtering
   const graphQuery = useQuery<GraphData>({
-    queryKey: [...queryKeys.graphData(ipId || ''), filters],
+    queryKey,
     queryFn: () => {
       if (!derivativesQuery.data) {
         throw new Error('Derivative data not available');
       }
-      
+
       try {
         setLoading(true);
-        
-        // Transform API data to graph format
-        const graphData = transformToGraphData(derivativesQuery.data);
-        
-        // Apply filters
-        const filteredData = applyFilters(
-          graphData,
-          nodeTypes,
-          linkTypes,
-          searchQuery,
-          maxDistance,
-          relationshipTypes
-        );
-        
+
+        // Use memoized transformation and filtering
+        const filteredData = transformAndFilter(derivativesQuery.data);
+
         // Update last updated timestamp
         setLastUpdated(new Date().toISOString());
-        
+
         // Find path to selected node if any and highlight it
         if (selectedNode) {
           const path = findPathBetweenNodes(filteredData, selectedNode);
@@ -200,7 +223,7 @@ export function useGraphData(ipId: string | null) {
             highlightPath(path);
           }
         }
-        
+
         return filteredData;
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to process graph data');
@@ -213,7 +236,7 @@ export function useGraphData(ipId: string | null) {
     staleTime: 1 * 60 * 1000, // 1 minute - shorter because filters can change
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
-  
+
   // Update loading and error states based on query state
   useEffect(() => {
     setLoading(graphQuery.isLoading || graphQuery.isFetching);
@@ -223,14 +246,14 @@ export function useGraphData(ipId: string | null) {
       setError(null);
     }
   }, [
-    graphQuery.isLoading, 
-    graphQuery.isFetching, 
-    graphQuery.error, 
+    graphQuery.isLoading,
+    graphQuery.isFetching,
+    graphQuery.error,
     derivativesQuery.error,
-    setLoading, 
+    setLoading,
     setError
   ]);
-  
+
   return graphQuery;
 }
 

@@ -1,22 +1,29 @@
 "use client";
 
-import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useCallback, useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { ForceGraph2D } from 'react-force-graph-2d';
 import { easeCubicInOut } from 'd3-ease';
 import { useGraphData } from '@/lib/hooks/useDerivativeData';
 import { getNodeColor, getLinkColor, getNodeLabel, findRelationshipPath } from '@/lib/utils/graph/graph-transform';
 import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
 import { GraphData, GraphNode, GraphLink, NodeType } from '@/types/graph';
+
+// Import critical components normally
 import GraphControls from './GraphControls';
-import GraphLegend from './GraphLegend';
-import GraphTooltip from './GraphTooltip';
-import PathHighlight from './PathHighlight';
-import KeyboardControls from './KeyboardControls';
-import AccessibilityAnnouncer from './AccessibilityAnnouncer';
-import GraphDescription from './GraphDescription';
 import { GraphLoadingState, GraphStateHandler } from './GraphLoadingState';
-import { GraphErrorBoundary, withGraphErrorBoundary } from './GraphErrorBoundary';
+import { GraphErrorBoundary } from './GraphErrorBoundary';
 import '../../styles/graph.css';
+
+// Lazily load non-critical components
+const GraphLegend = lazy(() => import('./GraphLegend'));
+const GraphTooltip = lazy(() => import('./GraphTooltip'));
+const PathHighlight = lazy(() => import('./PathHighlight'));
+const KeyboardControls = lazy(() => import('./KeyboardControls'));
+const AccessibilityAnnouncer = lazy(() => import('./AccessibilityAnnouncer'));
+const GraphDescription = lazy(() => import('./GraphDescription'));
+
+// Simple fallback loading component
+const LazyLoadingFallback = () => <div className="lazy-loading-fallback" aria-hidden="true" />;
 
 interface DerivativeGraphProps {
   ipId: string;
@@ -620,12 +627,73 @@ const DerivativeGraphInner = ({
     });
   }, [touchState, zoomLevel, handleNodeClick, handleNodeHover, handleZoomIn, setZoomLevel]);
   
-  // Customize node appearance with enhanced visual effects
+  // Function to parse color for gradient - memoized to avoid recomputing
+  const parseColor = useMemo(() => {
+    return (color: string) => {
+      let r = 0, g = 0, b = 0;
+
+      if (color.startsWith('#')) {
+        if (color.length === 4) {
+          r = parseInt(color[1] + color[1], 16);
+          g = parseInt(color[2] + color[2], 16);
+          b = parseInt(color[3] + color[3], 16);
+        } else {
+          r = parseInt(color.slice(1, 3), 16);
+          g = parseInt(color.slice(3, 5), 16);
+          b = parseInt(color.slice(5, 7), 16);
+        }
+      } else if (color.startsWith('rgb')) {
+        const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([.\d]+))?\)/);
+        if (match) {
+          r = parseInt(match[1]);
+          g = parseInt(match[2]);
+          b = parseInt(match[3]);
+        }
+      }
+
+      return { r, g, b };
+    };
+  }, []);
+
+  // Cache relationship badge colors
+  const relationshipColors = useMemo(() => ({
+    'remix': '#3b82f6',      // Blue
+    'adaptation': '#10b981', // Green
+    'translation': '#f59e0b', // Amber
+    'sequel': '#8b5cf6',     // Purple
+    'prequel': '#6366f1',    // Indigo
+    'default': '#6b7280'     // Gray
+  }), []);
+
+  // Helper to draw rounded rectangle - memoized to avoid recreating the function
+  const drawRoundedRect = useCallback((
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  }, []);
+
+  // Customize node appearance with enhanced visual effects and performance optimizations
   const paintNode = useCallback((node: GraphNode, ctx: CanvasRenderingContext2D) => {
     const isHighlighted = node.id === viewPreferences.highlightedNode;
     const isHovered = hoveredNode && node.id === hoveredNode.id;
     const isSelected = selectedNode === node.id;
     const isRoot = node.type === NodeType.ROOT;
+    const isSpecial = isHighlighted || isHovered || isSelected || isRoot;
 
     // Get opacity (for fading background nodes when path is highlighted)
     const opacity = node.opacity !== undefined ? node.opacity : 1;
@@ -641,12 +709,13 @@ const DerivativeGraphInner = ({
     if (isRoot) size *= ROOT_NODE_SIZE_MULTIPLIER;
 
     // Add animations for highlighted/selected nodes
-    if (isHighlighted || isHovered || isSelected) {
+    if (isSpecial && !isRoot) {
       size = NODE_HIGHLIGHT_SIZE;
 
       // Add subtle pulse animation for selected nodes
       if (isSelected || isHighlighted) {
-        const time = Date.now() % 2000 / 2000; // 0-1 value cycling every 2 seconds
+        // Use modulo to avoid growing Date.now() values
+        const time = (Date.now() % 2000) / 2000;
         // Sine wave for smooth pulsing (1.0 - 1.2 range)
         const pulse = 1.0 + 0.2 * Math.sin(time * Math.PI * 2);
         size *= pulse;
@@ -654,7 +723,7 @@ const DerivativeGraphInner = ({
     }
 
     // Get node color from utility function
-    const color = getNodeColor(node, isHighlighted || isHovered || isSelected);
+    const color = getNodeColor(node, isSpecial);
 
     // Save context state
     ctx.save();
@@ -664,8 +733,10 @@ const DerivativeGraphInner = ({
 
     // Draw glow effect for highlighted/selected nodes
     if (isHighlighted || isSelected) {
-      // Outer glow
+      // Outer glow - simpler rendering for performance
       const glowSize = size * 1.4;
+
+      // Only create gradient if node is highlighted or selected
       const gradient = ctx.createRadialGradient(
         0, 0, size * 0.8,
         0, 0, glowSize
@@ -682,12 +753,12 @@ const DerivativeGraphInner = ({
       ctx.fill();
       ctx.globalAlpha = opacity; // Reset opacity
 
-      // Add animated ring for selected nodes
+      // Add animated ring for selected nodes - optimized
       if (isSelected) {
         ctx.beginPath();
 
-        // Use time for animation
-        const ringTime = Date.now() / 1000;
+        // Use time modulo for animation to avoid growing values
+        const ringTime = (Date.now() / 1000) % 10;
         const ringScale = 1 + 0.15 * Math.sin(ringTime * 3);
 
         ctx.arc(0, 0, size * ringScale, 0, 2 * Math.PI);
@@ -699,28 +770,16 @@ const DerivativeGraphInner = ({
       }
     }
 
-    // Draw main circle with gradient for enhanced depth
-    if (isHighlighted || isSelected || isRoot) {
-      // Create a gradient for depth effect
+    // Optimize drawing based on node importance
+    if (isSpecial) {
+      // Create a gradient for depth effect only for important nodes
       const gradient = ctx.createRadialGradient(
         -size/3, -size/3, 0,
         0, 0, size
       );
 
       // Parse color for gradient
-      let r = 0, g = 0, b = 0;
-
-      if (color.startsWith('#')) {
-        if (color.length === 4) {
-          r = parseInt(color[1] + color[1], 16);
-          g = parseInt(color[2] + color[2], 16);
-          b = parseInt(color[3] + color[3], 16);
-        } else {
-          r = parseInt(color.slice(1, 3), 16);
-          g = parseInt(color.slice(3, 5), 16);
-          b = parseInt(color.slice(5, 7), 16);
-        }
-      }
+      const { r, g, b } = parseColor(color);
 
       // Create lighter and darker versions for gradient
       const lighter = `rgb(${Math.min(r + 50, 255)}, ${Math.min(g + 50, 255)}, ${Math.min(b + 50, 255)})`;
@@ -735,20 +794,22 @@ const DerivativeGraphInner = ({
       ctx.fillStyle = gradient;
       ctx.fill();
     } else {
-      // Simple circle for normal nodes
+      // Simple circle for normal nodes - optimized for performance
       ctx.beginPath();
       ctx.arc(0, 0, size, 0, 2 * Math.PI);
       ctx.fillStyle = color;
       ctx.fill();
     }
 
-    // Draw enhanced border with shadow effect
-    if (isHighlighted || isHovered || isSelected) {
-      // Add shadow for depth
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-      ctx.shadowBlur = 5;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
+    // Draw enhanced border with shadow effect - conditionally to improve performance
+    if (isSpecial) {
+      // Only add shadow for important nodes
+      if (isHighlighted || isSelected) {
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
 
       // Thicker border for selected/highlighted
       ctx.beginPath();
@@ -760,7 +821,7 @@ const DerivativeGraphInner = ({
       // Reset shadow
       ctx.shadowBlur = 0;
 
-      // Add secondary highlight ring
+      // Add secondary highlight ring only for selected nodes
       if (isSelected) {
         ctx.beginPath();
         ctx.arc(0, 0, size + 3, 0, 2 * Math.PI);
@@ -771,7 +832,7 @@ const DerivativeGraphInner = ({
         ctx.stroke();
       }
     } else {
-      // Simple border for normal nodes
+      // Simple border for normal nodes - optimized
       ctx.beginPath();
       ctx.arc(0, 0, size, 0, 2 * Math.PI);
       ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
@@ -779,9 +840,9 @@ const DerivativeGraphInner = ({
       ctx.stroke();
     }
 
-    // Draw label based on view preferences with improved styling
+    // Draw label conditionally based on importance
     const labelSettings = viewPreferences.labels;
-    if (isHighlighted || isHovered || isSelected || filters.showLabels || isRoot) {
+    if (isSpecial || filters.showLabels) {
       const label = getNodeLabel(
         node,
         labelSettings?.maxLength || 20
@@ -795,7 +856,7 @@ const DerivativeGraphInner = ({
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
 
-      // Draw enhanced label background with rounded corners
+      // Measure text before drawing for optimization
       const textWidth = ctx.measureText(label).width;
       const padding = labelSettings?.padding || 4;
       const bgColor = viewPreferences.darkMode
@@ -808,23 +869,14 @@ const DerivativeGraphInner = ({
       const bgWidth = textWidth + (padding * 2);
       const bgHeight = fontSize + (padding * 2);
 
-      // Draw rounded rectangle
-      ctx.beginPath();
-      ctx.moveTo(bgX + cornerRadius, bgY);
-      ctx.lineTo(bgX + bgWidth - cornerRadius, bgY);
-      ctx.quadraticCurveTo(bgX + bgWidth, bgY, bgX + bgWidth, bgY + cornerRadius);
-      ctx.lineTo(bgX + bgWidth, bgY + bgHeight - cornerRadius);
-      ctx.quadraticCurveTo(bgX + bgWidth, bgY + bgHeight, bgX + bgWidth - cornerRadius, bgY + bgHeight);
-      ctx.lineTo(bgX + cornerRadius, bgY + bgHeight);
-      ctx.quadraticCurveTo(bgX, bgY + bgHeight, bgX, bgY + bgHeight - cornerRadius);
-      ctx.lineTo(bgX, bgY + cornerRadius);
-      ctx.quadraticCurveTo(bgX, bgY, bgX + cornerRadius, bgY);
-      ctx.closePath();
+      // Use optimized rounded rectangle function
+      drawRoundedRect(ctx, bgX, bgY, bgWidth, bgHeight, cornerRadius);
 
       // Fill and add subtle border for depth
       ctx.fillStyle = bgColor;
       ctx.fill();
 
+      // Only add extra effects for special nodes
       if (isHighlighted || isSelected) {
         ctx.strokeStyle = viewPreferences.darkMode
           ? 'rgba(255, 255, 255, 0.3)'
@@ -856,7 +908,7 @@ const DerivativeGraphInner = ({
       if (node.type === NodeType.DERIVATIVE && node.data?.relationshipType &&
           (isHovered || isSelected || isHighlighted)) {
         // Format relationship type for display
-        const relType = node.data.relationshipType.toString();
+        const relType = node.data.relationshipType.toString().toLowerCase();
         const subLabel = relType.charAt(0).toUpperCase() + relType.slice(1);
         const subSize = fontSize * 0.75;
 
@@ -867,30 +919,18 @@ const DerivativeGraphInner = ({
         const subY = bgY + bgHeight + padding;
         const subHeight = subSize + (subPadding * 1.5);
 
-        // Rounded rectangle for badge
-        ctx.beginPath();
-        ctx.moveTo(subX + cornerRadius, subY);
-        ctx.lineTo(subX + subWidth + (subPadding * 2) - cornerRadius, subY);
-        ctx.quadraticCurveTo(subX + subWidth + (subPadding * 2), subY, subX + subWidth + (subPadding * 2), subY + cornerRadius);
-        ctx.lineTo(subX + subWidth + (subPadding * 2), subY + subHeight - cornerRadius);
-        ctx.quadraticCurveTo(subX + subWidth + (subPadding * 2), subY + subHeight, subX + subWidth + (subPadding * 2) - cornerRadius, subY + subHeight);
-        ctx.lineTo(subX + cornerRadius, subY + subHeight);
-        ctx.quadraticCurveTo(subX, subY + subHeight, subX, subY + subHeight - cornerRadius);
-        ctx.lineTo(subX, subY + cornerRadius);
-        ctx.quadraticCurveTo(subX, subY, subX + cornerRadius, subY);
-        ctx.closePath();
+        // Use optimized rounded rectangle function
+        drawRoundedRect(
+          ctx,
+          subX,
+          subY,
+          subWidth + (subPadding * 2),
+          subHeight,
+          cornerRadius
+        );
 
-        // Fill badge with relationship-specific color
-        let badgeColor;
-        switch(relType.toLowerCase()) {
-          case 'remix': badgeColor = '#3b82f6'; break; // Blue
-          case 'adaptation': badgeColor = '#10b981'; break; // Green
-          case 'translation': badgeColor = '#f59e0b'; break; // Amber
-          case 'sequel': badgeColor = '#8b5cf6'; break; // Purple
-          case 'prequel': badgeColor = '#6366f1'; break; // Indigo
-          default: badgeColor = '#6b7280'; // Gray
-        }
-
+        // Fill badge with relationship-specific color from cached values
+        const badgeColor = relationshipColors[relType] || relationshipColors.default;
         ctx.fillStyle = badgeColor;
         ctx.fill();
 
@@ -904,7 +944,8 @@ const DerivativeGraphInner = ({
     // Special effects for root node
     if (isRoot) {
       // Add subtle pulsing effect to highlight importance
-      const time = Date.now() / 1000;
+      // Modulo time to avoid growing values
+      const time = (Date.now() / 1000) % 10;
       const pulseSize = size * (1 + 0.05 * Math.sin(time * 2));
 
       // Draw outer ring
@@ -931,7 +972,7 @@ const DerivativeGraphInner = ({
     }
 
     // If the node has an image, indicate it with an enhanced icon
-    if (node.image && (isHighlighted || isHovered || isSelected || isRoot) && size > 8) {
+    if (node.image && isSpecial && size > 8) {
       // Add a small image indicator icon
       const iconSize = size * 0.4;
 
@@ -959,8 +1000,7 @@ const DerivativeGraphInner = ({
 
     // Restore context state
     ctx.restore();
-    }
-  }, [hoveredNode, selectedNode, viewPreferences, filters.showLabels, isMobile]);
+  }, [hoveredNode, selectedNode, viewPreferences, filters.showLabels, isMobile, parseColor, drawRoundedRect, relationshipColors]);
   
   // Customize link appearance with enhanced animated highlights
   const paintLink = useCallback((link: GraphLink, ctx: CanvasRenderingContext2D) => {
@@ -1190,10 +1230,12 @@ const DerivativeGraphInner = ({
         data-testid="derivative-graph-container"
       >
         {/* Accessibility announcer for dynamic updates */}
-        <AccessibilityAnnouncer
-          message={announcement}
-          assertive={isAssertive}
-        />
+        <Suspense fallback={<LazyLoadingFallback />}>
+          <AccessibilityAnnouncer
+            message={announcement}
+            assertive={isAssertive}
+          />
+        </Suspense>
 
         {/* Graph visualization */}
         <div
@@ -1240,8 +1282,8 @@ const DerivativeGraphInner = ({
               aria-busy={isLoading ? 'true' : 'false'}
             />
           )}
-        
-        
+
+
         {/* Graph Controls - Responsive with touch support */}
         {showControls && (
           <GraphControls
@@ -1255,12 +1297,14 @@ const DerivativeGraphInner = ({
         )}
         </div> {/* End of role="application" div */}
 
-        {/* Graph Legend - Responsive */}
+        {/* Graph Legend - Responsive - Lazy loaded */}
         {showLegend && (
-          <GraphLegend
-            position={isMobile ? 'bottom-left' : legendPosition}
-            compact={dimensions.width < 640 || dimensions.height < 500 || isMobile}
-          />
+          <Suspense fallback={<LazyLoadingFallback />}>
+            <GraphLegend
+              position={isMobile ? 'bottom-left' : legendPosition}
+              compact={dimensions.width < 640 || dimensions.height < 500 || isMobile}
+            />
+          </Suspense>
         )}
 
         {/* Basic zoom controls (always visible) - Larger on mobile */}
@@ -1304,62 +1348,66 @@ const DerivativeGraphInner = ({
           </button>
         </div>
 
-        {/* Enhanced Node tooltip (shown when hovering) with better positioning */}
+        {/* Enhanced Node tooltip (shown when hovering) with better positioning - Lazy loaded */}
         {hoveredNode && (
-          <GraphTooltip
-            node={hoveredNode}
-            position={{
-              x: (hoveredNode.x || 0) + dimensions.width / 2,
-              y: (hoveredNode.y || 0) + dimensions.height / 2
-            }}
-            isDarkMode={viewPreferences.darkMode}
-            isMobile={isMobile}
-            viewportDimensions={dimensions}
-            onShowDetails={(nodeId) => {
-              setSelectedNode(nodeId);
-              highlightNode(nodeId);
+          <Suspense fallback={<LazyLoadingFallback />}>
+            <GraphTooltip
+              node={hoveredNode}
+              position={{
+                x: (hoveredNode.x || 0) + dimensions.width / 2,
+                y: (hoveredNode.y || 0) + dimensions.height / 2
+              }}
+              isDarkMode={viewPreferences.darkMode}
+              isMobile={isMobile}
+              viewportDimensions={dimensions}
+              onShowDetails={(nodeId) => {
+                setSelectedNode(nodeId);
+                highlightNode(nodeId);
 
-              // Find the relationship path between the root and this node
-              if (graphData) {
-                const rootId = graphData.metadata?.rootId || ipId;
-                const pathLinks = findPath(graphData, rootId, nodeId);
-                if (pathLinks) {
-                  highlightPath(pathLinks);
+                // Find the relationship path between the root and this node
+                if (graphData) {
+                  const rootId = graphData.metadata?.rootId || ipId;
+                  const pathLinks = findPath(graphData, rootId, nodeId);
+                  if (pathLinks) {
+                    highlightPath(pathLinks);
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          </Suspense>
         )}
 
-        {/* Path highlight overlay */}
+        {/* Path highlight overlay - Lazy loaded */}
         {selectedNode && viewPreferences.highlightedPath && (
-          <PathHighlight
-            path={viewPreferences.highlightedPath}
-            sourceNode={graphData?.nodes.find(n => n.id === (graphData?.metadata?.rootId || ipId)) || null}
-            targetNode={graphData?.nodes.find(n => n.id === selectedNode) || null}
-            intermediateNodes={
-              findRelationshipPath(
-                graphData || { nodes: [], links: [] },
-                graphData?.metadata?.rootId || ipId,
-                selectedNode
-              ).intermediateNodes
-            }
-            description={
-              findRelationshipPath(
-                graphData || { nodes: [], links: [] },
-                graphData?.metadata?.rootId || ipId,
-                selectedNode
-              ).description
-            }
-            onClose={() => {
-              highlightPath(null);
-              highlightNode(null);
-              setSelectedNode(null);
-            }}
-            isDarkMode={viewPreferences.darkMode}
-          />
+          <Suspense fallback={<LazyLoadingFallback />}>
+            <PathHighlight
+              path={viewPreferences.highlightedPath}
+              sourceNode={graphData?.nodes.find(n => n.id === (graphData?.metadata?.rootId || ipId)) || null}
+              targetNode={graphData?.nodes.find(n => n.id === selectedNode) || null}
+              intermediateNodes={
+                findRelationshipPath(
+                  graphData || { nodes: [], links: [] },
+                  graphData?.metadata?.rootId || ipId,
+                  selectedNode
+                ).intermediateNodes
+              }
+              description={
+                findRelationshipPath(
+                  graphData || { nodes: [], links: [] },
+                  graphData?.metadata?.rootId || ipId,
+                  selectedNode
+                ).description
+              }
+              onClose={() => {
+                highlightPath(null);
+                highlightNode(null);
+                setSelectedNode(null);
+              }}
+              isDarkMode={viewPreferences.darkMode}
+            />
+          </Suspense>
         )}
-        
+
         {/* Mobile hint overlay for first-time users */}
         {isMobile && (
           <div
@@ -1373,17 +1421,19 @@ const DerivativeGraphInner = ({
           </div>
         )}
 
-        {/* Text-based representation for screen readers */}
+        {/* Text-based representation for screen readers - Lazy loaded */}
         {showDescription && graphData && (
-          <GraphDescription
-            graphData={graphData}
-            selectedNode={selectedNode}
-            isDarkMode={viewPreferences.darkMode}
-            className="sr-only sr-only-focusable"
-          />
+          <Suspense fallback={<LazyLoadingFallback />}>
+            <GraphDescription
+              graphData={graphData}
+              selectedNode={selectedNode}
+              isDarkMode={viewPreferences.darkMode}
+              className="sr-only sr-only-focusable"
+            />
+          </Suspense>
         )}
 
-        {/* Keyboard navigation controls and focus indicator */}
+        {/* Keyboard navigation controls and focus indicator - Lazy loaded */}
         {!isMobile && (
           <>
             {/* Visual indicator for currently focused node */}
@@ -1401,22 +1451,24 @@ const DerivativeGraphInner = ({
             )}
 
             {/* Keyboard navigation controls panel */}
-            <KeyboardControls
-              visible={isFocusMode}
-              onEscape={() => setIsFocusMode(false)}
-              onNodeSelect={(node) => handleNodeClick(node)}
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
-              onReset={handleReset}
-              focusedNode={
-                isFocusMode && focusedNodeIndex >= 0 && graphData?.nodes
-                  ? graphData.nodes.filter(n => filters.nodeTypes.includes(n.type))[focusedNodeIndex] || null
-                  : null
-              }
-              nodes={graphData?.nodes.filter(n => filters.nodeTypes.includes(n.type)) || []}
-              focusedNodeIndex={focusedNodeIndex}
-              isDarkMode={viewPreferences.darkMode}
-            />
+            <Suspense fallback={<LazyLoadingFallback />}>
+              <KeyboardControls
+                visible={isFocusMode}
+                onEscape={() => setIsFocusMode(false)}
+                onNodeSelect={(node) => handleNodeClick(node)}
+                onZoomIn={handleZoomIn}
+                onZoomOut={handleZoomOut}
+                onReset={handleReset}
+                focusedNode={
+                  isFocusMode && focusedNodeIndex >= 0 && graphData?.nodes
+                    ? graphData.nodes.filter(n => filters.nodeTypes.includes(n.type))[focusedNodeIndex] || null
+                    : null
+                }
+                nodes={graphData?.nodes.filter(n => filters.nodeTypes.includes(n.type)) || []}
+                focusedNodeIndex={focusedNodeIndex}
+                isDarkMode={viewPreferences.darkMode}
+              />
+            </Suspense>
           </>
         )}
       </div>
@@ -1425,14 +1477,32 @@ const DerivativeGraphInner = ({
 };
 
 /**
+ * DerivativeGraph Inner Component wrapped with React.memo
+ * Memoizes the inner component to prevent unnecessary re-renders
+ */
+const MemoizedDerivativeGraphInner = React.memo(DerivativeGraphInner, (prevProps, nextProps) => {
+  // Custom comparison function for memoization
+  // Only re-render if these specific props change
+  return (
+    prevProps.ipId === nextProps.ipId &&
+    prevProps.width === nextProps.width &&
+    prevProps.height === nextProps.height &&
+    prevProps.showControls === nextProps.showControls &&
+    prevProps.showLegend === nextProps.showLegend &&
+    prevProps.legendPosition === nextProps.legendPosition &&
+    prevProps.showDescription === nextProps.showDescription
+  );
+});
+
+/**
  * DerivativeGraph with Error Boundary
- * 
+ *
  * Wraps the graph component with an error boundary to handle rendering errors
  */
 export default function DerivativeGraph(props: DerivativeGraphProps) {
   return (
     <GraphErrorBoundary>
-      <DerivativeGraphInner {...props} />
+      <MemoizedDerivativeGraphInner {...props} />
     </GraphErrorBoundary>
   );
 }

@@ -364,6 +364,7 @@ export const useGraphFilters = create<GraphFilterState>()(
  * Hook to get filtered graph state
  * Combines the graph data and filter state for components that need a ready-to-use
  * filtered dataset without manually applying filters
+ * Uses memoization to prevent unnecessary re-renders
  */
 export function useFilteredGraphState() {
   const {
@@ -373,12 +374,14 @@ export function useFilteredGraphState() {
     isLoading,
     error,
   } = useGraphFilters();
-  
-  return {
+
+  // Memoize the return object to prevent unnecessary re-renders
+  // This ensures components using this hook only re-render when the data they care about changes
+  return useMemo(() => ({
     filters,
     viewPreferences,
     selectedNode,
     isLoading,
     error,
-  };
+  }), [filters, viewPreferences, selectedNode, isLoading, error]);
 }
