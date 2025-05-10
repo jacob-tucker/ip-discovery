@@ -4,9 +4,10 @@ import React, { useRef, useCallback, useState, useEffect, useMemo } from 'react'
 import { ForceGraph2D } from 'react-force-graph-2d';
 import { easeCubicInOut } from 'd3-ease';
 import { useGraphData } from '@/lib/hooks/useDerivativeData';
-import { getNodeColor, getLinkColor } from '@/lib/utils/graph/graph-transform';
+import { getNodeColor, getLinkColor, applyFilters } from '@/lib/utils/graph/graph-transform';
 import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
 import { GraphData, GraphNode, GraphLink, NodeType } from '@/types/graph';
+import GraphControls from './GraphControls';
 import '../../styles/graph.css';
 
 interface DerivativeGraphProps {
@@ -15,6 +16,7 @@ interface DerivativeGraphProps {
   height?: number;
   onNodeClick?: (node: GraphNode) => void;
   className?: string;
+  showControls?: boolean;
 }
 
 const DEFAULT_NODE_SIZE = 6;
@@ -22,7 +24,9 @@ const NODE_HIGHLIGHT_SIZE = 10;
 const ROOT_NODE_SIZE_MULTIPLIER = 1.5;
 const LABEL_FONT_SIZE = 4;
 const CANVAS_BG_COLOR = 'rgba(248, 250, 252, 0.8)';
+const DARK_CANVAS_BG_COLOR = 'rgba(15, 23, 42, 0.8)';
 const TEXT_COLOR = '#334155';
+const DARK_TEXT_COLOR = '#E2E8F0';
 const LINK_WIDTH = 1.5;
 const LINK_HIGHLIGHT_WIDTH = 3;
 const ANIMATION_DURATION = 800;
@@ -38,7 +42,8 @@ export default function DerivativeGraph({
   width = 800,
   height = 600,
   onNodeClick,
-  className = ''
+  className = '',
+  showControls = true
 }: DerivativeGraphProps) {
   // References
   const graphRef = useRef<any>(null);
@@ -51,15 +56,30 @@ export default function DerivativeGraph({
   const [zoomLevel, setZoomLevel] = useState(1);
   
   // Get graph data using the custom hook
-  const { data: graphData, isLoading, error } = useGraphData(ipId);
+  const { data: rawGraphData, isLoading, error } = useGraphData(ipId);
   
   // Use graph filters from Zustand store
   const { 
     viewPreferences,
     setViewPreferences,
     highlightNode,
-    filters
+    filters,
+    setFilters
   } = useGraphFilters();
+  
+  // Apply filters to the graph data
+  const graphData = useMemo(() => {
+    if (!rawGraphData) return null;
+    
+    // Apply filters to the graph data
+    return applyFilters(
+      rawGraphData,
+      filters.nodeTypes,
+      filters.linkTypes,
+      filters.searchQuery,
+      filters.maxDistance
+    );
+  }, [rawGraphData, filters.nodeTypes, filters.linkTypes, filters.searchQuery, filters.maxDistance]);
   
   // Extract graph dimensions from container if available
   useEffect(() => {
@@ -92,7 +112,7 @@ export default function DerivativeGraph({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Focus on root node when graph data is loaded
+  // Focus on root node when graph data is loaded or filters change
   useEffect(() => {
     if (graphData && graphRef.current && !isLoading) {
       // Find the root node
@@ -169,11 +189,12 @@ export default function DerivativeGraph({
       ctx.font = `${LABEL_FONT_SIZE}px Sans-Serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillStyle = TEXT_COLOR;
       
       // Draw label background
       const textWidth = ctx.measureText(label).width;
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillStyle = viewPreferences.darkMode 
+        ? 'rgba(15, 23, 42, 0.8)' 
+        : 'rgba(255, 255, 255, 0.8)';
       ctx.fillRect(
         -textWidth / 2 - 2,
         size + 2,
@@ -182,7 +203,7 @@ export default function DerivativeGraph({
       );
       
       // Draw label text
-      ctx.fillStyle = TEXT_COLOR;
+      ctx.fillStyle = viewPreferences.darkMode ? DARK_TEXT_COLOR : TEXT_COLOR;
       ctx.fillText(label, 0, size + 4);
     }
     
@@ -191,7 +212,7 @@ export default function DerivativeGraph({
       // This would ideally load and draw the image
       // We'll implement this in a future enhancement
     }
-  }, [hoveredNode, selectedNode, viewPreferences.highlightedNode, filters.showLabels]);
+  }, [hoveredNode, selectedNode, viewPreferences.highlightedNode, viewPreferences.darkMode, filters.showLabels]);
   
   // Customize link appearance
   const paintLink = useCallback((link: GraphLink, ctx: CanvasRenderingContext2D) => {
@@ -255,8 +276,8 @@ export default function DerivativeGraph({
   
   // Reset view handler
   const handleReset = useCallback(() => {
-    if (graphRef.current && graphData) {
-      const rootNode = graphData.nodes.find(node => node.type === NodeType.ROOT);
+    if (graphRef.current && rawGraphData) {
+      const rootNode = rawGraphData.nodes.find(node => node.type === NodeType.ROOT);
       if (rootNode) {
         setZoomLevel(1);
         graphRef.current.centerAt(
@@ -267,7 +288,7 @@ export default function DerivativeGraph({
         graphRef.current.zoom(1, ANIMATION_DURATION);
       }
     }
-  }, [graphData]);
+  }, [rawGraphData]);
   
   // Memoize the graph component to avoid unnecessary re-renders
   const forceGraph = useMemo(() => {
@@ -281,7 +302,7 @@ export default function DerivativeGraph({
         graphData={graphData}
         width={dimensions.width}
         height={dimensions.height}
-        backgroundColor={CANVAS_BG_COLOR}
+        backgroundColor={viewPreferences.darkMode ? DARK_CANVAS_BG_COLOR : CANVAS_BG_COLOR}
         nodeId="id"
         nodeLabel="title"
         nodeRelSize={DEFAULT_NODE_SIZE}
@@ -305,7 +326,8 @@ export default function DerivativeGraph({
     paintNode, 
     paintLink, 
     handleNodeClick, 
-    handleNodeHover
+    handleNodeHover,
+    viewPreferences.darkMode
   ]);
   
   // Loading state
@@ -403,7 +425,18 @@ export default function DerivativeGraph({
       {/* Graph visualization */}
       {forceGraph}
       
-      {/* Zoom controls */}
+      {/* Graph Controls */}
+      {showControls && (
+        <GraphControls
+          graphRef={graphRef}
+          rootId={ipId}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onReset={handleReset}
+        />
+      )}
+      
+      {/* Basic zoom controls (always visible) */}
       <div className="graph-controls">
         <button 
           className={`graph-controls-button ${viewPreferences.darkMode ? 'dark' : ''}`}

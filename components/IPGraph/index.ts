@@ -2,3 +2,4 @@
 // This will make imports cleaner in other files
 
 export { default as DerivativeGraph } from './DerivativeGraph';
+export { default as GraphControls } from './GraphControls';
