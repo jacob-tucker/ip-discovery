@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Sliders, 
   Search,
@@ -13,7 +13,10 @@ import {
   Tag,
   X,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  MoreHorizontal,
+  Minimize2,
+  Maximize2
 } from 'lucide-react';
 import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
 import { NodeType, LinkType, RelationshipType } from '@/types/graph';
@@ -27,12 +30,14 @@ interface GraphControlsProps {
   onZoomOut?: () => void;
   onReset?: () => void;
   className?: string;
+  isMobile?: boolean;
 }
 
 /**
  * Graph Controls Component
  * 
  * Provides controls for filtering, searching, and adjusting the graph view.
+ * Enhanced with mobile support and touch interactions.
  */
 export default function GraphControls({
   graphRef,
@@ -40,7 +45,8 @@ export default function GraphControls({
   onZoomIn,
   onZoomOut,
   onReset,
-  className = ''
+  className = '',
+  isMobile = false
 }: GraphControlsProps) {
   // Get filters and actions from zustand store
   const {
@@ -57,6 +63,9 @@ export default function GraphControls({
   const [activeSections, setActiveSections] = useState<string[]>(['nodeTypes']);
   const [searchInputValue, setSearchInputValue] = useState(filters.searchQuery);
   const [searchDebounceTimer, setSearchDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [isCompactView, setIsCompactView] = useState(isMobile);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{y: number, timestamp: number} | null>(null);
 
   // Initialize local state from filters
   useEffect(() => {
@@ -84,6 +93,53 @@ export default function GraphControls({
   // Handle panel expansion toggle
   const toggleExpanded = useCallback(() => {
     setIsExpanded(prev => !prev);
+    setIsCompactView(false); // Expand fully when opening
+  }, []);
+  
+  // Toggle compact view (for mobile)
+  const toggleCompactView = useCallback(() => {
+    setIsCompactView(prev => !prev);
+  }, []);
+
+  // Handle touch events for mobile panel
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (!isMobile || !panelRef.current) return;
+    
+    // Record the starting touch position and time
+    touchStartRef.current = {
+      y: e.touches[0].clientY,
+      timestamp: Date.now()
+    };
+  }, [isMobile]);
+  
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isMobile || !touchStartRef.current || !panelRef.current) return;
+    
+    // Prevent default to stop scrolling
+    e.preventDefault();
+    
+    const touchY = e.touches[0].clientY;
+    const startY = touchStartRef.current.y;
+    const deltaY = touchY - startY;
+    
+    // Only handle significant movements
+    if (Math.abs(deltaY) > 10) {
+      if (deltaY > 0) {
+        // Swiping down - minimize the panel
+        setIsCompactView(true);
+      } else {
+        // Swiping up - maximize the panel
+        setIsCompactView(false);
+      }
+      
+      // Reset touch start to prevent multiple triggers
+      touchStartRef.current = null;
+    }
+  }, [isMobile]);
+  
+  const handleTouchEnd = useCallback(() => {
+    // Reset touch reference
+    touchStartRef.current = null;
   }, []);
 
   // Toggle section visibility
@@ -208,19 +264,23 @@ export default function GraphControls({
   // Render control panel button (visible when collapsed)
   if (!isExpanded) {
     return (
-      <div className="absolute top-4 right-4 z-10">
+      <div className={cn(
+        "absolute z-10",
+        isMobile ? "bottom-4 right-4" : "top-4 right-4"
+      )}>
         <button
           onClick={toggleExpanded}
           className={cn(
             "flex items-center justify-center p-2 rounded-md bg-cardBg border border-border shadow-sm",
             "hover:bg-background transition-colors duration-200",
             viewPreferences.darkMode ? "text-white" : "text-text",
+            isMobile ? "h-12 w-12 rounded-full" : "",
             className
           )}
           aria-label="Show graph controls"
         >
           <Filter className="h-5 w-5" />
-          <span className="ml-2 text-sm">Filters</span>
+          {!isMobile && <span className="ml-2 text-sm">Filters</span>}
         </button>
       </div>
     );
@@ -228,26 +288,38 @@ export default function GraphControls({
 
   return (
     <div 
+      ref={panelRef}
       className={cn(
         "graph-controls-panel overflow-auto",
         viewPreferences.darkMode ? "dark" : "",
+        isMobile ? "mobile" : "",
+        isCompactView && isMobile ? "compact" : "",
         className
       )}
       style={{
         position: "absolute",
-        top: "1rem",
-        right: "1rem",
-        width: "280px",
-        maxHeight: "calc(100% - 2rem)",
+        top: isMobile ? "auto" : "1rem",
+        right: isMobile ? 0 : "1rem",
+        bottom: isMobile ? 0 : "auto",
+        left: isMobile ? 0 : "auto",
+        width: isMobile ? "100%" : "280px",
+        maxHeight: isMobile ? (isCompactView ? "6rem" : "75vh") : "calc(100% - 2rem)",
         backgroundColor: viewPreferences.darkMode ? "rgba(15, 23, 42, 0.95)" : "rgba(255, 255, 255, 0.95)",
-        borderRadius: "0.5rem",
+        borderRadius: isMobile ? "1rem 1rem 0 0" : "0.5rem",
         border: "1px solid",
         borderColor: viewPreferences.darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+        borderBottom: isMobile ? "none" : undefined,
+        borderLeft: isMobile ? "none" : undefined,
+        borderRight: isMobile ? "none" : undefined,
         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
         zIndex: 1000,
         display: "flex",
-        flexDirection: "column"
+        flexDirection: "column",
+        transition: "max-height 0.3s ease-in-out"
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Header */}
       <div className="flex justify-between items-center p-3 border-b border-border">
@@ -256,6 +328,19 @@ export default function GraphControls({
           Graph Controls
         </h3>
         <div className="flex gap-1">
+          {isMobile && (
+            <button
+              onClick={toggleCompactView}
+              className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
+              aria-label={isCompactView ? "Expand controls" : "Minimize controls"}
+            >
+              {isCompactView ? (
+                <Maximize2 className="h-4 w-4" />
+              ) : (
+                <Minimize2 className="h-4 w-4" />
+              )}
+            </button>
+          )}
           <button
             onClick={handleResetAll}
             className="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -302,320 +387,359 @@ export default function GraphControls({
         </div>
       </div>
 
-      {/* Filter sections */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Node Types Section */}
-        <div className="border-b border-border">
-          <button
-            onClick={() => toggleSection('nodeTypes')}
-            className="flex justify-between items-center w-full p-3 text-left"
-          >
-            <span className="flex items-center text-sm font-medium">
-              <div className="h-3 w-3 rounded-full bg-primary mr-2"></div>
-              Node Types
-            </span>
-            {isActive('nodeTypes') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
-          
-          {isActive('nodeTypes') && (
-            <div className="px-3 pb-3">
-              <div className="space-y-2">
-                {nodeTypeData.map(({ type, label, color }) => (
-                  <div key={type} className="flex items-center">
+      {/* Filter sections - only shown if not in compact mobile view */}
+      {(!isMobile || (isMobile && !isCompactView)) && (
+        <div className="flex-1 overflow-y-auto section-content">
+          {/* Node Types Section */}
+          <div className="border-b border-border">
+            <button
+              onClick={() => toggleSection('nodeTypes')}
+              className="flex justify-between items-center w-full p-3 text-left"
+            >
+              <span className="flex items-center text-sm font-medium">
+                <div className="h-3 w-3 rounded-full bg-primary mr-2"></div>
+                Node Types
+              </span>
+              {isActive('nodeTypes') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+            
+            {isActive('nodeTypes') && (
+              <div className="px-3 pb-3">
+                <div className="space-y-2">
+                  {nodeTypeData.map(({ type, label, color }) => (
+                    <div key={type} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`node-${type}`}
+                        checked={filters.nodeTypes.includes(type)}
+                        onChange={() => toggleNodeType(type)}
+                        className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <div 
+                        className="h-3 w-3 rounded-full mr-2" 
+                        style={{ backgroundColor: color }}
+                      ></div>
+                      <label htmlFor={`node-${type}`} className="text-sm">
+                        {label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Link Types Section */}
+          <div className="border-b border-border">
+            <button
+              onClick={() => toggleSection('linkTypes')}
+              className="flex justify-between items-center w-full p-3 text-left"
+            >
+              <span className="flex items-center text-sm font-medium">
+                <div className="h-3 w-3 border-t-2 border-primary mr-2"></div>
+                Link Types
+              </span>
+              {isActive('linkTypes') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+
+            {isActive('linkTypes') && (
+              <div className="px-3 pb-3">
+                <div className="space-y-2">
+                  {linkTypeData.map(({ type, label, color }) => (
+                    <div key={type} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`link-${type}`}
+                        checked={filters.linkTypes.includes(type)}
+                        onChange={() => toggleLinkType(type)}
+                        className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <div
+                        className="h-2 w-6 mr-2"
+                        style={{ backgroundColor: color, borderRadius: '1px' }}
+                      ></div>
+                      <label htmlFor={`link-${type}`} className="text-sm">
+                        {label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Relationship Types Section */}
+          <div className="border-b border-border">
+            <button
+              onClick={() => toggleSection('relationshipTypes')}
+              className="flex justify-between items-center w-full p-3 text-left"
+            >
+              <span className="flex items-center text-sm font-medium">
+                <div className="h-3 w-3 rounded-md bg-indigo-500 mr-2"></div>
+                Relationship Types
+              </span>
+              {isActive('relationshipTypes') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+
+            {isActive('relationshipTypes') && (
+              <div className="px-3 pb-3">
+                <div className="grid grid-cols-2 gap-2">
+                  {relationshipTypeData.map(({ type, label }) => (
+                    <div key={type} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`rel-${type}`}
+                        checked={(filters.relationshipTypes || []).includes(type)}
+                        onChange={() => toggleRelationshipType(type)}
+                        className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                      <label htmlFor={`rel-${type}`} className="text-sm truncate">
+                        {label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Settings Section */}
+          <div className="border-b border-border">
+            <button
+              onClick={() => toggleSection('settings')}
+              className="flex justify-between items-center w-full p-3 text-left"
+            >
+              <span className="flex items-center text-sm font-medium">
+                <Sliders className="h-4 w-4 mr-2" />
+                View Settings
+              </span>
+              {isActive('settings') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+            
+            {isActive('settings') && (
+              <div className="px-3 pb-3">
+                <div className="space-y-4">
+                  {/* Max Distance */}
+                  <div>
+                    <label htmlFor="max-distance" className="block text-sm mb-1">
+                      Max Relationship Distance: {filters.maxDistance}
+                    </label>
+                    <input
+                      type="range"
+                      id="max-distance"
+                      min="1"
+                      max="5"
+                      step="1"
+                      value={filters.maxDistance}
+                      onChange={handleMaxDistanceChange}
+                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-xs text-textMuted">
+                      <span>Close</span>
+                      <span>Distant</span>
+                    </div>
+                  </div>
+                  
+                  {/* Show Labels */}
+                  <div className="flex items-center">
                     <input
                       type="checkbox"
-                      id={`node-${type}`}
-                      checked={filters.nodeTypes.includes(type)}
-                      onChange={() => toggleNodeType(type)}
+                      id="show-labels"
+                      checked={filters.showLabels}
+                      onChange={toggleLabels}
                       className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
                     />
-                    <div 
-                      className="h-3 w-3 rounded-full mr-2" 
-                      style={{ backgroundColor: color }}
-                    ></div>
-                    <label htmlFor={`node-${type}`} className="text-sm">
-                      {label}
+                    <label htmlFor="show-labels" className="text-sm flex items-center">
+                      <Tag className="h-3 w-3 mr-1" />
+                      Show All Labels
                     </label>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Link Types Section */}
-        <div className="border-b border-border">
-          <button
-            onClick={() => toggleSection('linkTypes')}
-            className="flex justify-between items-center w-full p-3 text-left"
-          >
-            <span className="flex items-center text-sm font-medium">
-              <div className="h-3 w-3 border-t-2 border-primary mr-2"></div>
-              Link Types
-            </span>
-            {isActive('linkTypes') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
+          {/* Physics Settings Section */}
+          <div className="border-b border-border">
+            <button
+              onClick={() => toggleSection('physics')}
+              className="flex justify-between items-center w-full p-3 text-left"
+            >
+              <span className="flex items-center text-sm font-medium">
+                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                  <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M12 2V6" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M12 18V22" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M2 12H6" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M18 12H22" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+                Physics Settings
+              </span>
+              {isActive('physics') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
 
-          {isActive('linkTypes') && (
-            <div className="px-3 pb-3">
-              <div className="space-y-2">
-                {linkTypeData.map(({ type, label, color }) => (
-                  <div key={type} className="flex items-center">
+            {isActive('physics') && (
+              <div className="px-3 pb-3">
+                <div className="space-y-4">
+                  {/* Enable Physics */}
+                  <div className="flex items-center">
                     <input
                       type="checkbox"
-                      id={`link-${type}`}
-                      checked={filters.linkTypes.includes(type)}
-                      onChange={() => toggleLinkType(type)}
+                      id="enable-physics"
+                      checked={viewPreferences.physics?.enabled ?? true}
+                      onChange={togglePhysics}
                       className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
                     />
-                    <div
-                      className="h-2 w-6 mr-2"
-                      style={{ backgroundColor: color, borderRadius: '1px' }}
-                    ></div>
-                    <label htmlFor={`link-${type}`} className="text-sm">
-                      {label}
+                    <label htmlFor="enable-physics" className="text-sm">
+                      Enable Physics Simulation
                     </label>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* Relationship Types Section */}
-        <div className="border-b border-border">
-          <button
-            onClick={() => toggleSection('relationshipTypes')}
-            className="flex justify-between items-center w-full p-3 text-left"
-          >
-            <span className="flex items-center text-sm font-medium">
-              <div className="h-3 w-3 rounded-md bg-indigo-500 mr-2"></div>
-              Relationship Types
-            </span>
-            {isActive('relationshipTypes') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
-
-          {isActive('relationshipTypes') && (
-            <div className="px-3 pb-3">
-              <div className="grid grid-cols-2 gap-2">
-                {relationshipTypeData.map(({ type, label }) => (
-                  <div key={type} className="flex items-center">
+                  {/* Charge Strength */}
+                  <div>
+                    <label htmlFor="charge-strength" className="block text-sm mb-1">
+                      Repulsion Force: {viewPreferences.physics?.chargeStrength || -80}
+                    </label>
                     <input
-                      type="checkbox"
-                      id={`rel-${type}`}
-                      checked={(filters.relationshipTypes || []).includes(type)}
-                      onChange={() => toggleRelationshipType(type)}
-                      className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      type="range"
+                      id="charge-strength"
+                      min="-200"
+                      max="-20"
+                      step="10"
+                      value={viewPreferences.physics?.chargeStrength || -80}
+                      onChange={(e) => handlePhysicsChange('chargeStrength', parseInt(e.target.value, 10))}
+                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      disabled={!(viewPreferences.physics?.enabled ?? true)}
                     />
-                    <label htmlFor={`rel-${type}`} className="text-sm truncate">
-                      {label}
+                    <div className="flex justify-between text-xs text-textMuted">
+                      <span>Strong</span>
+                      <span>Weak</span>
+                    </div>
+                  </div>
+
+                  {/* Link Strength */}
+                  <div>
+                    <label htmlFor="link-strength" className="block text-sm mb-1">
+                      Link Strength: {viewPreferences.physics?.linkStrength || 50}
                     </label>
+                    <input
+                      type="range"
+                      id="link-strength"
+                      min="10"
+                      max="100"
+                      step="5"
+                      value={viewPreferences.physics?.linkStrength || 50}
+                      onChange={(e) => handlePhysicsChange('linkStrength', parseInt(e.target.value, 10))}
+                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      disabled={!(viewPreferences.physics?.enabled ?? true)}
+                    />
+                    <div className="flex justify-between text-xs text-textMuted">
+                      <span>Loose</span>
+                      <span>Tight</span>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* Settings Section */}
-        <div className="border-b border-border">
-          <button
-            onClick={() => toggleSection('settings')}
-            className="flex justify-between items-center w-full p-3 text-left"
-          >
-            <span className="flex items-center text-sm font-medium">
-              <Sliders className="h-4 w-4 mr-2" />
-              View Settings
-            </span>
-            {isActive('settings') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
-          
-          {isActive('settings') && (
-            <div className="px-3 pb-3">
-              <div className="space-y-4">
-                {/* Max Distance */}
-                <div>
-                  <label htmlFor="max-distance" className="block text-sm mb-1">
-                    Max Relationship Distance: {filters.maxDistance}
-                  </label>
-                  <input
-                    type="range"
-                    id="max-distance"
-                    min="1"
-                    max="5"
-                    step="1"
-                    value={filters.maxDistance}
-                    onChange={handleMaxDistanceChange}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex justify-between text-xs text-textMuted">
-                    <span>Close</span>
-                    <span>Distant</span>
-                  </div>
-                </div>
-                
-                {/* Show Labels */}
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="show-labels"
-                    checked={filters.showLabels}
-                    onChange={toggleLabels}
-                    className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="show-labels" className="text-sm flex items-center">
-                    <Tag className="h-3 w-3 mr-1" />
-                    Show All Labels
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Physics Settings Section */}
-        <div className="border-b border-border">
-          <button
-            onClick={() => toggleSection('physics')}
-            className="flex justify-between items-center w-full p-3 text-left"
-          >
-            <span className="flex items-center text-sm font-medium">
-              <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2"/>
-                <path d="M12 2V6" stroke="currentColor" strokeWidth="2"/>
-                <path d="M12 18V22" stroke="currentColor" strokeWidth="2"/>
-                <path d="M2 12H6" stroke="currentColor" strokeWidth="2"/>
-                <path d="M18 12H22" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-              Physics Settings
-            </span>
-            {isActive('physics') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-          </button>
-
-          {isActive('physics') && (
-            <div className="px-3 pb-3">
-              <div className="space-y-4">
-                {/* Enable Physics */}
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="enable-physics"
-                    checked={viewPreferences.physics?.enabled ?? true}
-                    onChange={togglePhysics}
-                    className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="enable-physics" className="text-sm">
-                    Enable Physics Simulation
-                  </label>
-                </div>
-
-                {/* Charge Strength */}
-                <div>
-                  <label htmlFor="charge-strength" className="block text-sm mb-1">
-                    Repulsion Force: {viewPreferences.physics?.chargeStrength || -80}
-                  </label>
-                  <input
-                    type="range"
-                    id="charge-strength"
-                    min="-200"
-                    max="-20"
-                    step="10"
-                    value={viewPreferences.physics?.chargeStrength || -80}
-                    onChange={(e) => handlePhysicsChange('chargeStrength', parseInt(e.target.value, 10))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                    disabled={!(viewPreferences.physics?.enabled ?? true)}
-                  />
-                  <div className="flex justify-between text-xs text-textMuted">
-                    <span>Strong</span>
-                    <span>Weak</span>
-                  </div>
-                </div>
-
-                {/* Link Strength */}
-                <div>
-                  <label htmlFor="link-strength" className="block text-sm mb-1">
-                    Link Strength: {viewPreferences.physics?.linkStrength || 50}
-                  </label>
-                  <input
-                    type="range"
-                    id="link-strength"
-                    min="10"
-                    max="100"
-                    step="5"
-                    value={viewPreferences.physics?.linkStrength || 50}
-                    onChange={(e) => handlePhysicsChange('linkStrength', parseInt(e.target.value, 10))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                    disabled={!(viewPreferences.physics?.enabled ?? true)}
-                  />
-                  <div className="flex justify-between text-xs text-textMuted">
-                    <span>Loose</span>
-                    <span>Tight</span>
-                  </div>
-                </div>
-
-                {/* Friction */}
-                <div>
-                  <label htmlFor="friction" className="block text-sm mb-1">
-                    Friction: {viewPreferences.physics?.friction || 0.9}
-                  </label>
-                  <input
-                    type="range"
-                    id="friction"
-                    min="0.1"
-                    max="0.99"
-                    step="0.05"
-                    value={viewPreferences.physics?.friction || 0.9}
-                    onChange={(e) => handlePhysicsChange('friction', parseFloat(e.target.value))}
-                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
-                    disabled={!(viewPreferences.physics?.enabled ?? true)}
-                  />
-                  <div className="flex justify-between text-xs text-textMuted">
-                    <span>Low</span>
-                    <span>High</span>
+                  {/* Friction */}
+                  <div>
+                    <label htmlFor="friction" className="block text-sm mb-1">
+                      Friction: {viewPreferences.physics?.friction || 0.9}
+                    </label>
+                    <input
+                      type="range"
+                      id="friction"
+                      min="0.1"
+                      max="0.99"
+                      step="0.05"
+                      value={viewPreferences.physics?.friction || 0.9}
+                      onChange={(e) => handlePhysicsChange('friction', parseFloat(e.target.value))}
+                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                      disabled={!(viewPreferences.physics?.enabled ?? true)}
+                    />
+                    <div className="flex justify-between text-xs text-textMuted">
+                      <span>Low</span>
+                      <span>High</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Zoom Controls */}
-      <div className="p-3 border-t border-border">
-        <div className="flex justify-center space-x-2">
-          <button
-            onClick={onZoomIn}
-            className={cn(
-              "p-2 rounded-md border border-border",
-              "hover:bg-background transition-colors duration-200"
-            )}
-            aria-label="Zoom in"
-          >
-            <ZoomIn className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onZoomOut}
-            className={cn(
-              "p-2 rounded-md border border-border",
-              "hover:bg-background transition-colors duration-200"
-            )}
-            aria-label="Zoom out"
-          >
-            <ZoomOut className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onReset}
-            className={cn(
-              "p-2 rounded-md border border-border",
-              "hover:bg-background transition-colors duration-200"
-            )}
-            aria-label="Reset view"
-          >
-            <RotateCcw className="h-4 w-4" />
-          </button>
+      {/* Mobile compact view shows just zoom controls */}
+      {isMobile && isCompactView ? (
+        <div className="p-3">
+          <div className="flex justify-center space-x-4">
+            <button
+              onClick={onZoomIn}
+              className={cn(
+                "p-2 rounded-full border border-border",
+                "hover:bg-background transition-colors duration-200"
+              )}
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="h-5 w-5" />
+            </button>
+            <button
+              onClick={onZoomOut}
+              className={cn(
+                "p-2 rounded-full border border-border",
+                "hover:bg-background transition-colors duration-200"
+              )}
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="h-5 w-5" />
+            </button>
+            <button
+              onClick={onReset}
+              className={cn(
+                "p-2 rounded-full border border-border",
+                "hover:bg-background transition-colors duration-200"
+              )}
+              aria-label="Reset view"
+            >
+              <RotateCcw className="h-5 w-5" />
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-3 border-t border-border">
+          <div className="flex justify-center space-x-2">
+            <button
+              onClick={onZoomIn}
+              className={cn(
+                "p-2 rounded-md border border-border",
+                "hover:bg-background transition-colors duration-200"
+              )}
+              aria-label="Zoom in"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onZoomOut}
+              className={cn(
+                "p-2 rounded-md border border-border",
+                "hover:bg-background transition-colors duration-200"
+              )}
+              aria-label="Zoom out"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onReset}
+              className={cn(
+                "p-2 rounded-md border border-border",
+                "hover:bg-background transition-colors duration-200"
+              )}
+              aria-label="Reset view"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
