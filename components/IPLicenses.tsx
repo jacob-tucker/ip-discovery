@@ -22,16 +22,19 @@ import { getLicensesForIP } from "@/lib/data";
 import { formatExpiration } from "@/lib/licenses";
 import { formatUSD } from "@/lib/tokenPrice";
 import { formatEther } from "viem";
+import { LicenseTermsModal } from "@/components/modals/LicenseTermsModal";
 
 interface IPLicensesProps {
   ip: IPAsset;
 }
 
 export default function IPLicenses({ ip }: IPLicensesProps) {
-  const [selectedLicense, setSelectedLicense] = useState<string | null>(null);
+  const [selectedLicense, setSelectedLicense] =
+    useState<DetailedLicenseTerms | null>(null);
   const [expandedLicense, setExpandedLicense] = useState<string | null>(null);
   const [licenses, setLicenses] = useState<DetailedLicenseTerms[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch real license data for the IP
   useEffect(() => {
@@ -51,7 +54,11 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
   }, [ip.ipId]);
 
   const handleLicenseSelect = (licenseId: string) => {
-    setSelectedLicense(licenseId === selectedLicense ? null : licenseId);
+    setSelectedLicense(
+      licenseId === selectedLicense?.id
+        ? null
+        : (licenses.find((l) => l.id === licenseId) as DetailedLicenseTerms)
+    );
   };
 
   const toggleExpandLicense = (licenseId: string) => {
@@ -132,14 +139,14 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
           <div
             key={license.id}
             className={`mb-2 rounded-md border overflow-hidden transition-colors ${
-              selectedLicense === license.id
+              selectedLicense === license
                 ? "border-accentPurple"
                 : "border-border"
             }`}
           >
             <div
               className={`p-2 flex items-center justify-between cursor-pointer ${
-                selectedLicense === license.id
+                selectedLicense === license
                   ? "bg-accentPurple/5"
                   : "bg-background"
               }`}
@@ -148,12 +155,12 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
               <div className="flex items-center">
                 <div
                   className={`h-4 w-4 rounded-full flex items-center justify-center mr-2 ${
-                    selectedLicense === license.id
+                    selectedLicense === license
                       ? "bg-accentPurple text-white"
                       : "border border-border"
                   }`}
                 >
-                  {selectedLicense === license.id && (
+                  {selectedLicense === license && (
                     <CheckCircle2 className="h-3 w-3" />
                   )}
                 </div>
@@ -350,12 +357,9 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                         className="text-xs text-accentPurple flex items-center hover:underline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // If we have a terms URI, we could open that here
-                          if (license.terms.uri) {
-                            window.open(license.terms.uri, "_blank");
-                          } else {
-                            alert("Full license terms not available");
-                          }
+                          // Open the modal with the license details
+                          setSelectedLicense(license);
+                          setIsModalOpen(true);
                         }}
                       >
                         <FileText className="h-3 w-3 mr-1" />
@@ -364,14 +368,14 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
 
                       <button
                         className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${
-                          selectedLicense === license.id
+                          selectedLicense === license
                             ? "bg-accentPurple text-white"
                             : "bg-gray-200 text-textMuted cursor-not-allowed"
                         }`}
-                        disabled={selectedLicense !== license.id}
+                        disabled={selectedLicense !== license}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (selectedLicense === license.id) {
+                          if (selectedLicense === license) {
                             mintLicense(license.id);
                           }
                         }}
@@ -387,6 +391,14 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
           </div>
         ))}
       </div>
+
+      {selectedLicense && (
+        <LicenseTermsModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          license={selectedLicense}
+        />
+      )}
     </div>
   );
 }
