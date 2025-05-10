@@ -5,10 +5,8 @@ import { featuredIPIds } from "@/data/featured-ipids";
 
 // Helper function to get base URL - used consistently across all functions
 export const getBaseUrl = (): string => {
-  console.log(process.env.VERCEL_URL);
-  return process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
+  console.log(process.env.NEXT_PUBLIC_API_URL);
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 };
 
 /**
