@@ -2,30 +2,54 @@
 
 import React from 'react';
 import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
+import ErrorFallback from './ErrorFallback';
+import { SkeletonLoader } from './SkeletonLoader';
 
 interface GraphLoadingStateProps {
   showMessage?: boolean;
   height?: string | number;
   text?: string;
+  useSkeleton?: boolean;
 }
 
 /**
  * Loading state component for graph visualization
- * Displays a loading spinner and optional message
+ * Displays a loading spinner or skeleton and optional message
  */
 export const GraphLoadingState: React.FC<GraphLoadingStateProps> = ({ 
   showMessage = true,
   height = 400,
-  text = 'Loading Derivative Galaxy...'
+  text = 'Loading Derivative Galaxy...',
+  useSkeleton = true
 }) => {
+  const { viewPreferences } = useGraphFilters();
+  const isDarkMode = viewPreferences?.darkMode || false;
+  
+  if (useSkeleton) {
+    return (
+      <SkeletonLoader 
+        height={height} 
+        showText={showMessage} 
+        text={text} 
+      />
+    );
+  }
+  
   return (
     <div 
       className="flex flex-col items-center justify-center space-y-4"
-      style={{ height: typeof height === 'number' ? `${height}px` : height }}
+      style={{ 
+        height: typeof height === 'number' ? `${height}px` : height,
+        backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.05)' : 'rgba(248, 250, 252, 0.5)',
+        borderRadius: '0.5rem'
+      }}
     >
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="h-10 w-10 rounded-full border-2 border-transparent border-t-indigo-500 border-r-indigo-500 animate-spin" />
+      
       {showMessage && (
-        <p className="text-sm text-gray-600 font-medium">{text}</p>
+        <p className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          {text}
+        </p>
       )}
     </div>
   );
@@ -39,13 +63,19 @@ export const GraphLoadingWrapper: React.FC<{
   children: React.ReactNode;
   isLoading?: boolean; // Optional override for the loading state
   height?: string | number;
-}> = ({ children, isLoading: isLoadingProp, height = 400 }) => {
+  useSkeleton?: boolean;
+}> = ({ 
+  children, 
+  isLoading: isLoadingProp, 
+  height = 400,
+  useSkeleton = true
+}) => {
   // Use either the provided loading state or get it from the global store
   const { isLoading } = useGraphFilters();
   const shouldShowLoading = isLoadingProp !== undefined ? isLoadingProp : isLoading;
 
   if (shouldShowLoading) {
-    return <GraphLoadingState height={height} />;
+    return <GraphLoadingState height={height} useSkeleton={useSkeleton} />;
   }
 
   return <>{children}</>;
@@ -61,13 +91,17 @@ export const GraphStateHandler: React.FC<{
   isEmpty?: boolean;
   emptyMessage?: string;
   height?: string | number;
+  onRetry?: () => void;
+  errorDetails?: Error;
 }> = ({ 
   children, 
   isLoading: isLoadingProp, 
   error: errorProp, 
   isEmpty = false,
   emptyMessage = 'No graph data available',
-  height = 400 
+  height = 400,
+  onRetry,
+  errorDetails
 }) => {
   // Get states from the store if not provided as props
   const { isLoading: storeLoading, error: storeError } = useGraphFilters();
@@ -81,35 +115,20 @@ export const GraphStateHandler: React.FC<{
 
   if (error) {
     return (
-      <div 
-        className="flex flex-col items-center justify-center p-6 border border-red-300 rounded-lg bg-red-50 text-red-800"
-        style={{ height: typeof height === 'number' ? `${height}px` : height }}
-      >
-        <svg 
-          xmlns="http://www.w3.org/2000/svg"
-          width="24" 
-          height="24" 
-          viewBox="0 0 24 24" 
-          fill="none"
-          className="mb-4 text-red-600"
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <p className="text-sm text-center">{error}</p>
-      </div>
+      <ErrorFallback 
+        error={errorDetails || new Error(error)}
+        message={error}
+        retry={onRetry}
+        className="w-full"
+        showDetails={process.env.NODE_ENV !== 'production'}
+      />
     );
   }
 
   if (isEmpty) {
     return (
       <div 
-        className="flex flex-col items-center justify-center p-6 border border-gray-200 rounded-lg bg-gray-50 text-gray-600"
+        className="flex flex-col items-center justify-center p-6 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
         style={{ height: typeof height === 'number' ? `${height}px` : height }}
       >
         <svg 
@@ -127,7 +146,7 @@ export const GraphStateHandler: React.FC<{
           <circle cx="12" cy="12" r="10" />
           <path d="M8 12h8" />
         </svg>
-        <p className="text-sm text-center">{emptyMessage}</p>
+        <p className="text-sm text-center max-w-md">{emptyMessage}</p>
       </div>
     );
   }

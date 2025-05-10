@@ -42,6 +42,23 @@
   color: #cbd5e1;
 }
 
+/* Skeleton loader animations */
+@keyframes pulse {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* Error and empty states */
 .error-icon, .empty-icon {
   color: #ef4444;
@@ -69,12 +86,117 @@
   font-weight: 500;
   cursor: pointer;
   border: none;
+  transition: background-color 0.2s ease;
 }
 
 .retry-button:hover {
   background-color: #2563eb;
 }
 
+/* Enhanced fallback UI styles */
+.fallback-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dark .fallback-container {
+  background-color: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: white;
+}
+
+.fallback-icon {
+  width: 3rem;
+  height: 3rem;
+  color: #ef4444;
+  margin-bottom: 1rem;
+}
+
+.fallback-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #1f2937;
+}
+
+.dark .fallback-title {
+  color: #f9fafb;
+}
+
+.fallback-message {
+  font-size: 0.875rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #4b5563;
+  max-width: 24rem;
+}
+
+.dark .fallback-message {
+  color: #d1d5db;
+}
+
+.fallback-details {
+  font-family: monospace;
+  font-size: 0.75rem;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  overflow-x: auto;
+  width: 100%;
+  max-width: 32rem;
+  margin-bottom: 1.5rem;
+  white-space: pre-wrap;
+}
+
+.dark .fallback-details {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+.fallback-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Skeleton loader specific styles */
+.skeleton-loader .node {
+  fill: rgba(203, 213, 225, 0.7);
+}
+
+.dark .skeleton-loader .node {
+  fill: rgba(71, 85, 105, 0.7);
+}
+
+.skeleton-loader .link {
+  stroke: rgba(203, 213, 225, 0.5);
+  stroke-width: 1;
+}
+
+.dark .skeleton-loader .link {
+  stroke: rgba(71, 85, 105, 0.5);
+}
+
+.skeleton-loader .center-node {
+  fill: #3b82f6;
+}
+
+.dark .skeleton-loader .center-node {
+  fill: #60a5fa;
+}
+
+.skeleton-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Main graph container */
 .graph-container {
   width: 100%;
   height: 100%;
@@ -164,6 +286,34 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.tooltip-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.tooltip-type {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.dark .tooltip-type {
+  color: #9ca3af;
+}
+
+.tooltip-relationship {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  background-color: rgba(59, 130, 246, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  display: inline-block;
+}
+
+.dark .tooltip-relationship {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
 .graph-legend {
   position: absolute;
   top: 1rem;
@@ -217,6 +367,14 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* Focus styles for accessibility */
+.graph-controls-button:focus-visible,
+.graph-search-input:focus-visible,
+.retry-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 640px) {
   .graph-controls {
@@ -239,5 +397,22 @@
   .graph-search-input {
     width: 8rem;
     font-size: 0.75rem;
+  }
+  
+  .fallback-container {
+    padding: 1rem;
+  }
+  
+  .fallback-title {
+    font-size: 1rem;
+  }
+  
+  .fallback-message {
+    font-size: 0.75rem;
+  }
+  
+  .fallback-actions {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
