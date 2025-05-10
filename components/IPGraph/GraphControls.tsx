@@ -16,7 +16,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
-import { NodeType, LinkType } from '@/types/graph';
+import { NodeType, LinkType, RelationshipType } from '@/types/graph';
 import { getNodeColor, getLinkColor } from '@/lib/utils/graph/graph-transform';
 import { cn } from '@/lib/utils';
 
@@ -115,6 +115,16 @@ export default function GraphControls({
     });
   }, [filters.linkTypes, setFilters]);
 
+  // Handle relationship type filter toggle
+  const toggleRelationshipType = useCallback((type: RelationshipType) => {
+    const currentTypes = filters.relationshipTypes || [];
+    setFilters({
+      relationshipTypes: currentTypes.includes(type)
+        ? currentTypes.filter(t => t !== type)
+        : [...currentTypes, type]
+    });
+  }, [filters.relationshipTypes, setFilters]);
+
   // Handle max distance change
   const handleMaxDistanceChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value, 10);
@@ -122,6 +132,26 @@ export default function GraphControls({
       setFilters({ maxDistance: value });
     }
   }, [setFilters]);
+
+  // Handle physics settings change
+  const handlePhysicsChange = useCallback((setting: string, value: any) => {
+    setViewPreferences({
+      physics: {
+        ...viewPreferences.physics,
+        [setting]: value
+      }
+    });
+  }, [viewPreferences.physics, setViewPreferences]);
+
+  // Toggle physics simulation
+  const togglePhysics = useCallback(() => {
+    setViewPreferences({
+      physics: {
+        ...viewPreferences.physics,
+        enabled: !viewPreferences.physics?.enabled
+      }
+    });
+  }, [viewPreferences.physics, setViewPreferences]);
 
   // Toggle dark mode
   const toggleDarkMode = useCallback(() => {
@@ -157,6 +187,20 @@ export default function GraphControls({
     { type: LinkType.DERIVED_BY, label: 'Derived By', color: getLinkColor({ type: LinkType.DERIVED_BY } as any) },
     { type: LinkType.COMMON_ANCESTOR, label: 'Common Ancestor', color: getLinkColor({ type: LinkType.COMMON_ANCESTOR } as any) },
     { type: LinkType.RELATED, label: 'Related', color: getLinkColor({ type: LinkType.RELATED } as any) }
+  ];
+
+  // Get relationship type display data
+  const relationshipTypeData = [
+    { type: RelationshipType.REMIX, label: 'Remix' },
+    { type: RelationshipType.ADAPTATION, label: 'Adaptation' },
+    { type: RelationshipType.TRANSLATION, label: 'Translation' },
+    { type: RelationshipType.SAMPLE, label: 'Sample' },
+    { type: RelationshipType.SEQUEL, label: 'Sequel' },
+    { type: RelationshipType.PREQUEL, label: 'Prequel' },
+    { type: RelationshipType.SPINOFF, label: 'Spinoff' },
+    { type: RelationshipType.INSPIRATION, label: 'Inspiration' },
+    { type: RelationshipType.HOMAGE, label: 'Homage' },
+    { type: RelationshipType.PARODY, label: 'Parody' }
   ];
 
   const isActive = (section: string) => activeSections.includes(section);
@@ -307,11 +351,11 @@ export default function GraphControls({
           >
             <span className="flex items-center text-sm font-medium">
               <div className="h-3 w-3 border-t-2 border-primary mr-2"></div>
-              Relationship Types
+              Link Types
             </span>
             {isActive('linkTypes') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
-          
+
           {isActive('linkTypes') && (
             <div className="px-3 pb-3">
               <div className="space-y-2">
@@ -324,11 +368,46 @@ export default function GraphControls({
                       onChange={() => toggleLinkType(type)}
                       className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
                     />
-                    <div 
-                      className="h-2 w-6 mr-2" 
+                    <div
+                      className="h-2 w-6 mr-2"
                       style={{ backgroundColor: color, borderRadius: '1px' }}
                     ></div>
                     <label htmlFor={`link-${type}`} className="text-sm">
+                      {label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Relationship Types Section */}
+        <div className="border-b border-border">
+          <button
+            onClick={() => toggleSection('relationshipTypes')}
+            className="flex justify-between items-center w-full p-3 text-left"
+          >
+            <span className="flex items-center text-sm font-medium">
+              <div className="h-3 w-3 rounded-md bg-indigo-500 mr-2"></div>
+              Relationship Types
+            </span>
+            {isActive('relationshipTypes') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
+
+          {isActive('relationshipTypes') && (
+            <div className="px-3 pb-3">
+              <div className="grid grid-cols-2 gap-2">
+                {relationshipTypeData.map(({ type, label }) => (
+                  <div key={type} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`rel-${type}`}
+                      checked={(filters.relationshipTypes || []).includes(type)}
+                      onChange={() => toggleRelationshipType(type)}
+                      className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    />
+                    <label htmlFor={`rel-${type}`} className="text-sm truncate">
                       {label}
                     </label>
                   </div>
@@ -388,6 +467,113 @@ export default function GraphControls({
                     <Tag className="h-3 w-3 mr-1" />
                     Show All Labels
                   </label>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Physics Settings Section */}
+        <div className="border-b border-border">
+          <button
+            onClick={() => toggleSection('physics')}
+            className="flex justify-between items-center w-full p-3 text-left"
+          >
+            <span className="flex items-center text-sm font-medium">
+              <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="2"/>
+                <path d="M12 2V6" stroke="currentColor" strokeWidth="2"/>
+                <path d="M12 18V22" stroke="currentColor" strokeWidth="2"/>
+                <path d="M2 12H6" stroke="currentColor" strokeWidth="2"/>
+                <path d="M18 12H22" stroke="currentColor" strokeWidth="2"/>
+              </svg>
+              Physics Settings
+            </span>
+            {isActive('physics') ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </button>
+
+          {isActive('physics') && (
+            <div className="px-3 pb-3">
+              <div className="space-y-4">
+                {/* Enable Physics */}
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="enable-physics"
+                    checked={viewPreferences.physics?.enabled ?? true}
+                    onChange={togglePhysics}
+                    className="mr-2 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="enable-physics" className="text-sm">
+                    Enable Physics Simulation
+                  </label>
+                </div>
+
+                {/* Charge Strength */}
+                <div>
+                  <label htmlFor="charge-strength" className="block text-sm mb-1">
+                    Repulsion Force: {viewPreferences.physics?.chargeStrength || -80}
+                  </label>
+                  <input
+                    type="range"
+                    id="charge-strength"
+                    min="-200"
+                    max="-20"
+                    step="10"
+                    value={viewPreferences.physics?.chargeStrength || -80}
+                    onChange={(e) => handlePhysicsChange('chargeStrength', parseInt(e.target.value, 10))}
+                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    disabled={!(viewPreferences.physics?.enabled ?? true)}
+                  />
+                  <div className="flex justify-between text-xs text-textMuted">
+                    <span>Strong</span>
+                    <span>Weak</span>
+                  </div>
+                </div>
+
+                {/* Link Strength */}
+                <div>
+                  <label htmlFor="link-strength" className="block text-sm mb-1">
+                    Link Strength: {viewPreferences.physics?.linkStrength || 50}
+                  </label>
+                  <input
+                    type="range"
+                    id="link-strength"
+                    min="10"
+                    max="100"
+                    step="5"
+                    value={viewPreferences.physics?.linkStrength || 50}
+                    onChange={(e) => handlePhysicsChange('linkStrength', parseInt(e.target.value, 10))}
+                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    disabled={!(viewPreferences.physics?.enabled ?? true)}
+                  />
+                  <div className="flex justify-between text-xs text-textMuted">
+                    <span>Loose</span>
+                    <span>Tight</span>
+                  </div>
+                </div>
+
+                {/* Friction */}
+                <div>
+                  <label htmlFor="friction" className="block text-sm mb-1">
+                    Friction: {viewPreferences.physics?.friction || 0.9}
+                  </label>
+                  <input
+                    type="range"
+                    id="friction"
+                    min="0.1"
+                    max="0.99"
+                    step="0.05"
+                    value={viewPreferences.physics?.friction || 0.9}
+                    onChange={(e) => handlePhysicsChange('friction', parseFloat(e.target.value))}
+                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    disabled={!(viewPreferences.physics?.enabled ?? true)}
+                  />
+                  <div className="flex justify-between text-xs text-textMuted">
+                    <span>Low</span>
+                    <span>High</span>
+                  </div>
                 </div>
               </div>
             </div>

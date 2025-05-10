@@ -1,6 +1,79 @@
 /**
  * Styles for the Derivative Galaxy graph
+ * Enhanced with support for loading, error states, and responsive design
  */
+
+/* Loading state styles */
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 0.25rem solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #3b82f6;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+.dark .spinner {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-top-color: #60a5fa;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.dark .loading-text {
+  color: #cbd5e1;
+}
+
+/* Error and empty states */
+.error-icon, .empty-icon {
+  color: #ef4444;
+  margin-bottom: 1rem;
+}
+
+.error-text, .empty-text {
+  font-size: 0.875rem;
+  color: #475569;
+  margin-bottom: 1rem;
+  text-align: center;
+  max-width: 24rem;
+}
+
+.dark .error-text, .dark .empty-text {
+  color: #cbd5e1;
+}
+
+.retry-button {
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.retry-button:hover {
+  background-color: #2563eb;
+}
 
 .graph-container {
   width: 100%;
