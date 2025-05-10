@@ -307,25 +307,25 @@ export function findPath(
   if (sourceId === targetId) {
     return [];
   }
-  
+
   // Build adjacency list for faster traversal
   const adjacencyList = new Map<string, {target: string, link: GraphLink}[]>();
-  
+
   // Initialize adjacency list
   graphData.nodes.forEach(node => {
     adjacencyList.set(node.id, []);
   });
-  
+
   // Add links to adjacency list (considering bidirectional links)
   graphData.links.forEach(link => {
     const source = typeof link.source === 'object' ? link.source.id : link.source;
     const target = typeof link.target === 'object' ? link.target.id : link.target;
-    
+
     // Add source -> target direction
     const sourceList = adjacencyList.get(source) || [];
     sourceList.push({ target, link });
     adjacencyList.set(source, sourceList);
-    
+
     // If bidirectional, add target -> source direction too
     if (link.bidirectional) {
       const targetList = adjacencyList.get(target) || [];
@@ -333,31 +333,205 @@ export function findPath(
       adjacencyList.set(target, targetList);
     }
   });
-  
+
   // Use breadth-first search to find shortest path
   const queue: {node: string, path: GraphLink[]}[] = [{ node: sourceId, path: [] }];
   const visited = new Set<string>([sourceId]);
-  
+
   while (queue.length > 0) {
     const { node, path } = queue.shift()!;
-    
+
     const neighbors = adjacencyList.get(node) || [];
-    
+
     for (const { target, link } of neighbors) {
       if (target === targetId) {
         // Found the target, return the path
         return [...path, link];
       }
-      
+
       if (!visited.has(target)) {
         visited.add(target);
         queue.push({ node: target, path: [...path, link] });
       }
     }
   }
-  
+
   // No path found
   return null;
+}
+
+/**
+ * Finds all direct neighbors of a node in the graph
+ * @param graphData - The graph data
+ * @param nodeId - Node ID to find neighbors for
+ * @returns Object containing neighboring nodes and connecting links
+ */
+export function findNodeNeighbors(
+  graphData: GraphData,
+  nodeId: string
+): { nodes: GraphNode[], links: GraphLink[] } {
+  const neighborNodes: Set<GraphNode> = new Set();
+  const neighborLinks: Set<GraphLink> = new Set();
+
+  // Find all links connected to this node
+  graphData.links.forEach(link => {
+    const source = typeof link.source === 'object' ? link.source.id : link.source;
+    const target = typeof link.target === 'object' ? link.target.id : link.target;
+
+    if (source === nodeId || target === nodeId) {
+      // Add the link
+      neighborLinks.add(link);
+
+      // Find the neighbor node
+      let neighborId = source === nodeId ? target : source;
+      let neighborNode = graphData.nodes.find(n => n.id === neighborId);
+
+      if (neighborNode) {
+        neighborNodes.add(neighborNode);
+      }
+    }
+  });
+
+  return {
+    nodes: Array.from(neighborNodes),
+    links: Array.from(neighborLinks)
+  };
+}
+
+/**
+ * Finds the relationship path between two nodes
+ * @param graphData - The graph data
+ * @param sourceId - Source node ID
+ * @param targetId - Target node ID
+ * @returns Object containing path details
+ */
+export function findRelationshipPath(
+  graphData: GraphData,
+  sourceId: string,
+  targetId: string
+): {
+  path: GraphLink[] | null,
+  intermediateNodes: GraphNode[],
+  description: string,
+  distance: number
+} {
+  // Get the path links
+  const pathLinks = findPath(graphData, sourceId, targetId);
+
+  if (!pathLinks) {
+    return {
+      path: null,
+      intermediateNodes: [],
+      description: "No relationship found",
+      distance: 0
+    };
+  }
+
+  // Find all node IDs in the path
+  const nodeIdsInPath = new Set<string>();
+  nodeIdsInPath.add(sourceId);
+  nodeIdsInPath.add(targetId);
+
+  pathLinks.forEach(link => {
+    const source = typeof link.source === 'object' ? link.source.id : link.source;
+    const target = typeof link.target === 'object' ? link.target.id : link.target;
+
+    nodeIdsInPath.add(source);
+    nodeIdsInPath.add(target);
+  });
+
+  // Get all nodes except source and target
+  const intermediateNodeIds = Array.from(nodeIdsInPath).filter(
+    id => id !== sourceId && id !== targetId
+  );
+
+  // Get the actual node objects
+  const intermediateNodes = graphData.nodes.filter(
+    node => intermediateNodeIds.includes(node.id)
+  );
+
+  // Generate a text description of the relationship
+  let description = "";
+  if (pathLinks.length === 0) {
+    description = "Same IP";
+  } else if (pathLinks.length === 1) {
+    description = "Direct relationship";
+
+    // Add relationship type if available
+    if (pathLinks[0].data?.relationshipType) {
+      description += ` (${pathLinks[0].data.relationshipType})`;
+    }
+  } else {
+    description = `Connected through ${pathLinks.length - 1} intermediate IP${pathLinks.length > 2 ? 's' : ''}`;
+  }
+
+  return {
+    path: pathLinks,
+    intermediateNodes,
+    description,
+    distance: pathLinks.length
+  };
+}
+
+/**
+ * Creates a highlighted version of the graph focusing on specific nodes and paths
+ * @param graphData - The original graph data
+ * @param highlightedNodeIds - Array of node IDs to highlight
+ * @param highlightedLinks - Optional array of links to highlight
+ * @returns Graph data with highlighted nodes and links
+ */
+export function createHighlightedGraph(
+  graphData: GraphData,
+  highlightedNodeIds: string[],
+  highlightedLinks?: GraphLink[]
+): GraphData {
+  if (!graphData || !graphData.nodes || !graphData.links) {
+    return { nodes: [], links: [] };
+  }
+
+  // Create a set of highlighted link IDs for faster lookup
+  const highlightedLinkIds = new Set<string>();
+  if (highlightedLinks) {
+    highlightedLinks.forEach(link => {
+      highlightedLinkIds.add(link.id);
+    });
+  }
+
+  // Create node set for connected nodes
+  const connectedNodeIds = new Set<string>(highlightedNodeIds);
+
+  // If we have highlighted links, add their source and target nodes
+  if (highlightedLinks) {
+    highlightedLinks.forEach(link => {
+      const source = typeof link.source === 'object' ? link.source.id : link.source;
+      const target = typeof link.target === 'object' ? link.target.id : link.target;
+
+      connectedNodeIds.add(source);
+      connectedNodeIds.add(target);
+    });
+  }
+
+  // Create a copy of the nodes with highlighting information
+  const nodes = graphData.nodes.map(node => ({
+    ...node,
+    highlighted: highlightedNodeIds.includes(node.id),
+    // Dim nodes that aren't part of the highlighted path
+    opacity: connectedNodeIds.has(node.id) ? 1 : 0.3
+  }));
+
+  // Create a copy of the links with highlighting information
+  const links = graphData.links.map(link => ({
+    ...link,
+    highlighted: highlightedLinkIds.has(link.id),
+    // Dim links that aren't part of the highlighted path
+    opacity: highlightedLinkIds.has(link.id) ? 1 : 0.1
+  }));
+
+  return {
+    nodes,
+    links,
+    metadata: graphData.metadata
+  };
 }
 
 /**
