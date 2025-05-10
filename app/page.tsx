@@ -47,9 +47,6 @@ export default function Home() {
       <main className="container py-8 flex-grow">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
-            <div className="mb-6">
-              <SearchBar onSearch={setSearchQuery} />
-            </div>
             {isLoading ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {[...Array(2)].map((_, index) => (
