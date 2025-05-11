@@ -64,7 +64,7 @@ export default function IPDetails({ ip }: IPDetailsProps) {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center">
               <User className="h-4 w-4 mr-1 text-accentOrange" />
-              <h3 className="text-xs font-semibold">Creators</h3>
+              <h3 className="text-sm font-semibold">Creators</h3>
             </div>
             {ip.creators.length > 2 && (
               <a href="#" className="text-xs text-accentPurple">
@@ -139,11 +139,11 @@ export default function IPDetails({ ip }: IPDetailsProps) {
         </div>
       )}
 
-      <div className="border-t border-border p-3">
-        <div className="flex items-center justify-between mb-2">
+      <div className="p-3 border-t border-border">
+        <div className="flex items-center justify-between mb-1">
           <div className="flex items-center">
             <Link className="h-4 w-4 mr-1 text-accentGreen" />
-            <h3 className="text-xs font-semibold">Asset Resources</h3>
+            <h3 className="text-sm font-semibold">Asset Resources</h3>
           </div>
         </div>
 
