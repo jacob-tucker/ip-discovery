@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useRef, useCallback, useState, useEffect, useMemo, Suspense, lazy } from 'react';
-import { ForceGraph2D } from 'react-force-graph-2d';
+import dynamic from 'next/dynamic';
 import { easeCubicInOut } from 'd3-ease';
 import { useGraphData } from '@/lib/hooks/useDerivativeData';
-import { getNodeColor, getLinkColor, getNodeLabel, findRelationshipPath } from '@/lib/utils/graph/graph-transform';
+import { getNodeColor, getLinkColor, getNodeLabel, findRelationshipPath, findPath } from '@/lib/utils/graph/graph-transform';
 import { useGraphFilters } from '@/lib/hooks/useGraphFilters';
 import { GraphNode, GraphLink, NodeType } from '@/types/graph';
 
@@ -13,6 +13,12 @@ import GraphControls from './GraphControls';
 import { GraphStateHandler } from './GraphLoadingState';
 import { GraphErrorBoundary } from './GraphErrorBoundary';
 import '../../styles/graph.css';
+
+// Import ForceGraph2D dynamically to avoid SSR issues (it requires window)
+const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
+  ssr: false,
+  loading: () => <div className="loading-placeholder">Loading graph visualization...</div>
+});
 
 // Lazily load non-critical components
 const GraphLegend = lazy(() => import('./GraphLegend'));
@@ -132,6 +138,12 @@ const DerivativeGraphInner = ({
     isLoading,
     setLastUpdated
   } = useGraphFilters();
+
+  // Function to announce screen reader messages - defined early so it can be used in other functions
+  const announce = useCallback((message: string, assertive: boolean = false) => {
+    setAnnouncement(message);
+    setIsAssertive(assertive);
+  }, []);
   
   // Check if we're on a mobile device
   useEffect(() => {
@@ -204,17 +216,44 @@ const DerivativeGraphInner = ({
 
       // Plus/minus keys for zoom
       if ((e.key === '+' || e.key === '=') && isFocusMode) {
-        handleZoomIn();
+        if (graphRef.current) {
+          const newZoom = zoomLevel * 1.2;
+          setZoomLevel(newZoom);
+          graphRef.current.zoom(newZoom, ANIMATION_DURATION);
+          announce(`Zoomed in. Current zoom level: ${Math.round(newZoom * 100)}%`, false);
+        }
         return;
       }
       if (e.key === '-' && isFocusMode) {
-        handleZoomOut();
+        if (graphRef.current) {
+          const newZoom = zoomLevel / 1.2;
+          setZoomLevel(newZoom);
+          graphRef.current.zoom(newZoom, ANIMATION_DURATION);
+          announce(`Zoomed out. Current zoom level: ${Math.round(newZoom * 100)}%`, false);
+        }
         return;
       }
 
       // R key for reset
       if ((e.key === 'r' || e.key === 'R') && isFocusMode) {
-        handleReset();
+        if (graphRef.current && graphData) {
+          const rootNode = graphData.nodes.find(node => node.type === NodeType.ROOT);
+          if (rootNode) {
+            setZoomLevel(1);
+            setSelectedNode(null);
+            highlightNode(null);
+            highlightPath(null);
+
+            graphRef.current.centerAt(
+              rootNode.x || 0,
+              rootNode.y || 0,
+              ANIMATION_DURATION
+            );
+            graphRef.current.zoom(1, ANIMATION_DURATION);
+
+            announce(`View reset. Centered on root node: ${rootNode.title}`, true);
+          }
+        }
         return;
       }
 
@@ -248,7 +287,33 @@ const DerivativeGraphInner = ({
       // Enter key selects the focused node
       if (e.key === 'Enter' && isFocusMode && focusedNodeIndex >= 0 && focusedNodeIndex < filteredNodes.length) {
         const node = filteredNodes[focusedNodeIndex];
-        handleNodeClick(node);
+        // We can't call handleNodeClick directly here as it would create circular dependencies
+        // Instead, we'll simulate the node click logic
+        if (node) {
+          setSelectedNode(node.id);
+          highlightNode(node.id);
+          announce(`Selected node: ${node.title}. Type: ${node.type}.${node.data?.relationshipType ? ` Relationship: ${node.data.relationshipType}.` : ''}`, true);
+
+          // Find and highlight path from root to this node
+          if (graphData && graphData.metadata?.rootId) {
+            const rootId = graphData.metadata.rootId;
+            // Don't try to find path to self
+            if (rootId !== node.id) {
+              const pathLinks = findPath(graphData, rootId, node.id);
+              if (pathLinks) {
+                highlightPath(pathLinks);
+              }
+            }
+          }
+
+          if (graphRef.current) {
+            graphRef.current.centerAt(
+              node.x || 0,
+              node.y || 0,
+              ANIMATION_DURATION
+            );
+          }
+        }
       }
     };
 
@@ -264,10 +329,14 @@ const DerivativeGraphInner = ({
     isFocusMode,
     focusedNodeIndex,
     filters.nodeTypes,
-    handleZoomIn,
-    handleZoomOut,
-    handleReset,
-    handleNodeClick
+    // No need to include handler functions in dependencies as they're defined below with useCallback
+    // and would cause circular dependencies
+    zoomLevel,
+    setZoomLevel,
+    setSelectedNode,
+    highlightNode,
+    highlightPath,
+    announce
   ]);
   
   // Re-render graph on window resize
@@ -305,24 +374,12 @@ const DerivativeGraphInner = ({
     }
   }, [graphData, isLoading, zoomLevel]);
 
-  // Function to announce screen reader messages
-  const announce = useCallback((message: string, assertive = false) => {
-    setAnnouncement(message);
-    setIsAssertive(assertive);
-  }, []);
-  
   // Update timestamp when data is loaded
   useEffect(() => {
     if (graphData && !isLoading) {
       setLastUpdated(new Date().toISOString());
     }
   }, [graphData, isLoading, setLastUpdated]);
-  
-  // Function to announce screen reader messages
-  const announce = useCallback((message: string, assertive: boolean = false) => {
-    setAnnouncement(message);
-    setIsAssertive(assertive);
-  }, []);
 
   // Handle node click with enhanced animation and path highlighting
   const handleNodeClick = useCallback((node: GraphNode) => {
@@ -572,6 +629,16 @@ const DerivativeGraphInner = ({
     }
   }, [touchState, getPinchDistance, setZoomLevel]);
   
+  // Zoom in handler - moved up before it's used
+  const handleZoomIn = useCallback(() => {
+    if (graphRef.current) {
+      const newZoom = zoomLevel * 1.2;
+      setZoomLevel(newZoom);
+      graphRef.current.zoom(newZoom, ANIMATION_DURATION);
+      announce(`Zoomed in. Current zoom level: ${Math.round(newZoom * 100)}%`, false);
+    }
+  }, [zoomLevel, setZoomLevel, announce]);
+
   // Handle touch end event
   const handleTouchEnd = useCallback((_e: React.TouchEvent) => {
     if (!touchState.active) return;
@@ -579,12 +646,12 @@ const DerivativeGraphInner = ({
     const now = Date.now();
     const touchDuration = now - touchState.lastTapTime;
     const isDoubleTap = touchDuration < DOUBLE_TAP_DELAY && !touchState.longPressMoved;
-    
+
     // Clear any pending long press timer
     if (touchState.longPressTimer) {
       clearTimeout(touchState.longPressTimer);
     }
-    
+
     // Handle tap actions
     if (!touchState.longPressMoved) {
       // Handle double tap to zoom in
@@ -629,7 +696,7 @@ const DerivativeGraphInner = ({
       longPressMoved: false,
       activeNode: null
     });
-  }, [touchState, zoomLevel, handleNodeClick, handleNodeHover, handleZoomIn, setZoomLevel]);
+  }, [touchState, zoomLevel, handleNodeClick, handleNodeHover, setZoomLevel]);
   
   // Function to parse color for gradient - memoized to avoid recomputing
   const parseColor = useMemo(() => {
@@ -1169,15 +1236,6 @@ const DerivativeGraphInner = ({
     }
   }, [hoveredNode, selectedNode, viewPreferences, isMobile]);
   
-  // Zoom in handler
-  const handleZoomIn = useCallback(() => {
-    if (graphRef.current) {
-      const newZoom = zoomLevel * 1.2;
-      setZoomLevel(newZoom);
-      graphRef.current.zoom(newZoom, ANIMATION_DURATION);
-      announce(`Zoomed in. Current zoom level: ${Math.round(newZoom * 100)}%`, false);
-    }
-  }, [zoomLevel, setZoomLevel, announce]);
 
   // Zoom out handler
   const handleZoomOut = useCallback(() => {
@@ -1210,16 +1268,6 @@ const DerivativeGraphInner = ({
       }
     }
   }, [graphData, setZoomLevel, setSelectedNode, highlightNode, highlightPath, announce]);
-
-  // Zoom in handler - need to define this before other handlers that depend on it
-  const handleZoomIn = useCallback(() => {
-    if (graphRef.current) {
-      const newZoom = zoomLevel * 1.2;
-      setZoomLevel(newZoom);
-      graphRef.current.zoom(newZoom, ANIMATION_DURATION);
-      announce(`Zoomed in. Current zoom level: ${Math.round(newZoom * 100)}%`, false);
-    }
-  }, [zoomLevel, setZoomLevel, announce]);
 
   // Use GraphStateHandler to handle loading, error, and empty states
   return (

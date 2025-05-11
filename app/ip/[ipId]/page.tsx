@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 import { use } from "react";
+import Link from "next/link";
 import {
   FileText,
   Calendar,
@@ -12,6 +13,7 @@ import {
   ExternalLink,
   Clock,
   Image as ImageIcon,
+  Network,
 } from "lucide-react";
 import Header from "@/components/Header";
 import IPDetails from "@/components/IPDetails";
@@ -227,6 +229,14 @@ export default function IPPage({ params }: IPPageProps) {
                 <div>
                   <div className="flex justify-between items-start">
                     <h1 className="text-xl font-bold">{ip.title}</h1>
+                    <Link
+                      href={`/ip/${decodedIpId}/graph`}
+                      className="p-2 rounded-full bg-accent hover:bg-accent/80 transition-colors"
+                      title="View Derivative Graph"
+                      aria-label="View Derivative Galaxy Graph"
+                    >
+                      <Network size={20} className="text-white" />
+                    </Link>
                   </div>
                   <p className="text-xs text-textMuted mt-1 mb-4 max-w-2xl">
                     {ip.description}
