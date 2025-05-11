@@ -139,7 +139,7 @@ export default function IPDetails({ ip }: IPDetailsProps) {
         </div>
       )}
 
-      <div className="p-3 border-t border-border">
+      <div className={`p-3 ${ip.creators.length > 0 ? "border-t border-border" : ""}`}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center">
             <Link className="h-4 w-4 mr-1 text-accentGreen" />
