@@ -115,6 +115,9 @@ export const getRoyaltyPaymentsForIP = async (
     // Fetch from our API endpoint which handles caching
     const response = await fetch(`${baseUrl}/api/royalties/${ipId}`, {
       next: { revalidate: 300 }, // 5 minutes, matching the API's revalidate setting
+    }).catch(err => {
+      console.error("Fetch error in getRoyaltyPaymentsForIP:", err);
+      return new Response(JSON.stringify([]), { status: 200 });
     });
 
     console.log(
@@ -127,7 +130,21 @@ export const getRoyaltyPaymentsForIP = async (
       return [];
     }
 
-    const payments = await response.json();
+    // Get response body and handle potential parsing errors
+    let payments: RoyaltyPayment[] = [];
+    try {
+      payments = await response.json();
+    } catch (parseError) {
+      console.error("JSON parse error in getRoyaltyPaymentsForIP:", parseError);
+      return [];
+    }
+
+    // Handle if response is not an array
+    if (!Array.isArray(payments)) {
+      console.error("Expected array of payments but got:", typeof payments);
+      return [];
+    }
+
     console.log(
       "getRoyaltyPaymentsForIP data received:",
       payments.length,

@@ -44,13 +44,21 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
   // Format address for display
   const formatAddress = (address: string) => {
     if (!address) return "Unknown";
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    try {
+      return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    } catch (e) {
+      return "Unknown";
+    }
   };
 
   // Format transaction hash for display
   const formatTxHash = (hash: string) => {
     if (!hash) return "Unknown";
-    return `${hash.substring(0, 6)}...${hash.substring(hash.length - 4)}`;
+    try {
+      return `${hash.substring(0, 6)}...${hash.substring(hash.length - 4)}`;
+    } catch (e) {
+      return "Unknown";
+    }
   };
 
   // Format timestamp to readable date

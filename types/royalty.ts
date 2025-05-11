@@ -2,7 +2,7 @@ export interface RoyaltyPayment {
   id: string;
   ipId: string;
   fromAddress: string;
-  amount: number;
+  amount: string; // Changed from number to string as formatTokenAmount returns string
   usdAmount: number;
   timestamp: number;
   blockNumber: number;
