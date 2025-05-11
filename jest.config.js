@@ -15,7 +15,7 @@ module.exports = {
     '<rootDir>/public/',
   ],
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './babel.test.js' }],
   },
   transformIgnorePatterns: [
     '/node_modules/',
