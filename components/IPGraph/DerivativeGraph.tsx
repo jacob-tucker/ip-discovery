@@ -1487,10 +1487,11 @@ const DerivativeGraphInner = ({
         ref={containerRef}
         className={`graph-container ${viewPreferences.darkMode ? "dark" : ""} ${className} ${isMobile ? "mobile" : ""}`}
         style={{
-          width: typeof width === "string" ? width : width || "100%",
+          width: "100%",
           height: typeof height === "string" ? height : height || "600px",
           position: "relative",
           maxWidth: "100%",
+          overflow: "hidden",
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -1509,8 +1510,16 @@ const DerivativeGraphInner = ({
           role='application'
           aria-label='Derivative Galaxy Graph'
           aria-describedby='graph-description'
-          className='w-full h-full'
-          style={{width: "100%", height: "100%"}}
+          className='w-full h-full relative overflow-hidden'
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
         >
           {graphData && (
             <ForceGraph2D
