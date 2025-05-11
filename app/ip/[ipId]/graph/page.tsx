@@ -33,11 +33,11 @@ export default function DerivativeGraphPage() {
   
   return (
     <div className="h-full min-h-screen bg-background">
-      <div className="container py-4">
+      <div className="container-fluid max-w-full px-4 py-4">
         {/* Header section */}
         <div className="flex items-center mb-4">
-          <Link 
-            href={`/ip/${encodeURIComponent(decodedIpId)}`} 
+          <Link
+            href={`/ip/${encodeURIComponent(decodedIpId)}`}
             className="flex items-center text-sm font-medium text-textMuted hover:text-text transition-colors mr-4"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
