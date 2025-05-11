@@ -32,8 +32,8 @@ export default function DerivativeGraphPage() {
   }, [selectedNode, router]);
   
   return (
-    <div className="h-full min-h-screen bg-background">
-      <div className="container-fluid max-w-full px-4 py-4">
+    <div className="h-full min-h-screen bg-background w-full">
+      <div className="w-full px-4 py-4">
         {/* Header section */}
         <div className="flex items-center mb-4">
           <Link
@@ -89,8 +89,8 @@ export default function DerivativeGraphPage() {
         </div>
         
         {/* Graph container */}
-        <div 
-          className="bg-cardBg rounded-md border border-border overflow-hidden" 
+        <div
+          className="bg-cardBg rounded-md border border-border overflow-hidden w-full"
           style={{ height: "70vh" }}
         >
           <DerivativeGraph 

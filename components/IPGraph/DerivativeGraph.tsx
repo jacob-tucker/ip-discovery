@@ -1281,10 +1281,11 @@ const DerivativeGraphInner = ({
       <div 
         ref={containerRef} 
         className={`graph-container ${viewPreferences.darkMode ? 'dark' : ''} ${className} ${isMobile ? 'mobile' : ''}`}
-        style={{ 
-          width: width || '100%', 
+        style={{
+          width: width || '100%',
           height: height || '600px',
-          position: 'relative'
+          position: 'relative',
+          maxWidth: '100vw'
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
