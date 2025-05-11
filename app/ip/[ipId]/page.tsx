@@ -231,7 +231,7 @@ export default function IPPage({ params }: IPPageProps) {
                     <h1 className="text-xl font-bold">{ip.title}</h1>
                     <Link
                       href={`/ip/${decodedIpId}/graph`}
-                      className="p-2 rounded-full bg-accent hover:bg-accent/80 transition-colors"
+                      className="p-2 rounded-full bg-accentPurple hover:bg-accentPurple/80 transition-colors"
                       title="View Derivative Graph"
                       aria-label="View Derivative Galaxy Graph"
                     >
