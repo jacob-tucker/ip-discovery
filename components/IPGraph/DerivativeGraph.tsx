@@ -121,7 +121,6 @@ const DerivativeGraphInner = ({
     zoom: Function
     cameraPosition: Function | null
     screen2GraphCoords: Function
-    canvas: Function
   }>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -617,7 +616,12 @@ const DerivativeGraphInner = ({
       if (!graphRef.current || !graphData) return null
 
       const {nodes} = graphData
-      const graphCanvas = graphRef.current.canvas()
+
+      // Get the canvas element from the DOM instead of using the ref
+      const graphContainer = containerRef.current
+      if (!graphContainer) return null
+
+      const graphCanvas = graphContainer.querySelector('canvas')
       if (!graphCanvas) return null
 
       // Convert screen coordinates to canvas coordinates
