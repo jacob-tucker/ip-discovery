@@ -41,3 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 **/.claude/settings.local.json
+ip-graph-instructions.md
+DERIVATIVE_GALAXY.md
