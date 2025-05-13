@@ -6,10 +6,10 @@ import { featuredIPIds } from "@/data/featured-ipids";
 // Helper function to get base URL - used consistently across all functions
 export const getBaseUrl = (): string => {
   // For Vercel deployments (production or preview)
-  console.log("VERCEL_URL:", `https://${process.env.VERCEL_URL}`);
-  if (process.env.VERCEL_URL) {
+  console.log("VERCEL_URL:", `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`);
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
     // Use HTTPS for production and preview deployments
-    return `https://${process.env.VERCEL_URL}`;
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
   }
 
   // Fallback to NEXT_PUBLIC_API_URL for local development or explicit configuration
