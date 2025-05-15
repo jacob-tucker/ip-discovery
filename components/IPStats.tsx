@@ -116,12 +116,6 @@ export default function IPStats({ ip }: IPStatsProps) {
       title: "Engagement",
       stats: [
         {
-          label: "Views",
-          value: 325,
-          icon: <Eye className="h-3 w-3 text-accentOrange" />,
-          loading: false,
-        },
-        {
           label: "Derivatives",
           value: derivativeCount !== null ? derivativeCount : 0,
           icon: <GitBranch className="h-3 w-3 text-accentGreen" />,
