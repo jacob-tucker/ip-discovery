@@ -74,11 +74,8 @@ export default function IPDetails({ ip }: IPDetailsProps) {
           </div>
 
           <div className="space-y-3">
-            {ip.creators.slice(0, 2).map((creator) => (
-              <div
-                key={creator.address}
-                className="bg-background rounded-md p-2"
-              >
+            {ip.creators.slice(0, 2).map((creator, index) => (
+              <div key={index} className="bg-background rounded-md p-2">
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center">

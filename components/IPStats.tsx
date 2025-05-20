@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { IPAsset } from "@/types/ip";
 import { getAssetDataFromStory, getDisputesForIP } from "@/lib/data";
+import { formatDate } from "@/lib/utils";
 
 interface IPStatsProps {
   ip: IPAsset;
@@ -93,14 +94,7 @@ export default function IPStats({ ip }: IPStatsProps) {
       stats: [
         {
           label: "Created",
-          value: new Date(Number(ip.createdAt) * 1000).toLocaleDateString(
-            "en-US",
-            {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            }
-          ),
+          value: formatDate(ip.createdAt),
           icon: <Calendar className="h-3 w-3 text-accentPurple" />,
           loading: false,
         },

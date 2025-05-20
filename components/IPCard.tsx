@@ -6,6 +6,7 @@ import { IPAsset } from "@/types/ip";
 import { motion } from "framer-motion";
 import { Calendar, User, Music, Video, Image as ImageIcon } from "lucide-react";
 import { useState } from "react";
+import { formatDate } from "@/lib/utils";
 
 interface IPCardProps {
   ip: IPAsset;
@@ -14,20 +15,6 @@ interface IPCardProps {
 export default function IPCard({ ip }: IPCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-
-  // Format date to be more readable
-  const formatDate = (timestamp: string) => {
-    try {
-      const date = new Date(Number(timestamp) * 1000);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch (error) {
-      return "Date unavailable";
-    }
-  };
 
   // Get main creator (first one)
   const mainCreator =
