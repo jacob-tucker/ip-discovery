@@ -18,6 +18,7 @@ import IPDetails from "@/components/IPDetails";
 import IPStats from "@/components/IPStats";
 import IPLicenses from "@/components/IPLicenses";
 import IPRoyalties from "@/components/IPRoyalties";
+import IPDisputes from "@/components/IPDisputes";
 import Footer from "@/components/Footer";
 import { getStoryIPAssetById } from "@/lib/data";
 import MediaRenderer from "@/components/MediaRenderer";
@@ -249,6 +250,9 @@ export default function IPPage({ params }: IPPageProps) {
               <IPDetails ip={ip} />
               <div className="mt-4">
                 <IPRoyalties ip={ip} />
+              </div>
+              <div className="mt-4">
+                <IPDisputes ip={ip} />
               </div>
             </div>
 

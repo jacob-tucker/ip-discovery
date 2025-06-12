@@ -180,9 +180,13 @@ export const getLicensesForIP = async (
 /**
  * Get dispute data for a specific IP asset
  * @param ipId IP asset ID
- * @returns Number of disputes raised for the IP
+ * @param countOnly If true, return only the count of disputes; if false, return the full disputes array
+ * @returns Either the count of disputes or the full disputes array
  */
-export const getDisputesForIP = async (ipId: string): Promise<number> => {
+export const getDisputesForIP = async (
+  ipId: string,
+  countOnly: boolean = false
+) => {
   try {
     const baseUrl = getBaseUrl();
 
@@ -193,13 +197,13 @@ export const getDisputesForIP = async (ipId: string): Promise<number> => {
 
     if (!response.ok) {
       console.error(`API error: ${response.status} ${response.statusText}`);
-      return 0;
+      return countOnly ? 0 : [];
     }
 
-    const data = await response.json();
-    return data.count || 0;
+    const disputes = await response.json();
+    return countOnly ? disputes.length : disputes;
   } catch (error) {
     console.error("Error fetching disputes via API:", error);
-    return 0;
+    return countOnly ? 0 : [];
   }
 };

@@ -11,44 +11,45 @@ export async function GET(
   const resolvedParams = await params;
   const ipId = resolvedParams.ipId;
 
+  console.log("Disputes API route called for IP:", ipId);
+
   try {
-    // Fetch disputes data from Story Protocol API
-    const response = await fetch(`https://api.storyapis.com/api/v3/disputes`, {
+    const options = {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         "X-Api-Key": process.env.X_API_KEY,
-        "X-Chain": "story-aeneid",
+        "X-Chain": process.env.X_CHAIN,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         options: {
+          orderBy: "blockNumber",
+          orderDirection: "desc",
+          pagination: {
+            limit: 10,
+          },
           where: {
             targetIpId: ipId,
           },
         },
       }),
-      next: { revalidate },
-    });
+    };
+
+    const response = await fetch(
+      "https://api.storyapis.com/api/v3/disputes",
+      options
+    );
+
+    console.log("disputes response", response);
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: `Failed to fetch dispute data: ${response.statusText}` },
-        { status: response.status }
-      );
+      throw new Error(`Story API responded with status: ${response.status}`);
     }
 
     const data = await response.json();
-
-    // Return just the count and the data array for this endpoint
-    return NextResponse.json({
-      count: data.data?.length || 0,
-      disputes: data.data || [],
-    });
+    return NextResponse.json(data.data);
   } catch (error) {
-    console.error("Error fetching dispute data from Story:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch dispute data from Story Protocol" },
-      { status: 500 }
-    );
+    console.error("Error fetching disputes:", error);
+    return NextResponse.json([], { status: 500 });
   }
 }

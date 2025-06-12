@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Eye,
   Clock,
@@ -30,9 +31,7 @@ const skeletonClass = "animate-pulse bg-gray-200 rounded";
 
 export default function IPStats({ ip }: IPStatsProps) {
   const [derivativeCount, setDerivativeCount] = useState<number | null>(null);
-  const [disputeCount, setDisputeCount] = useState<number | null>(null);
   const [isLoadingDerivatives, setIsLoadingDerivatives] = useState(true);
-  const [isLoadingDisputes, setIsLoadingDisputes] = useState(true);
 
   // Fetch derivative count data when component mounts
   useEffect(() => {
@@ -53,22 +52,15 @@ export default function IPStats({ ip }: IPStatsProps) {
     fetchDerivativeData();
   }, [ip.ipId]);
 
-  // Fetch dispute count data when component mounts
-  useEffect(() => {
-    const fetchDisputeData = async () => {
-      try {
-        setIsLoadingDisputes(true);
-        const count = await getDisputesForIP(ip.ipId);
-        setDisputeCount(count);
-      } catch (error) {
-        console.error("Failed to fetch dispute data:", error);
-      } finally {
-        setIsLoadingDisputes(false);
-      }
-    };
-
-    fetchDisputeData();
-  }, [ip.ipId]);
+  // Use React Query for disputes to leverage caching
+  const { data: disputeCount = 0, isLoading: isLoadingDisputes } = useQuery({
+    queryKey: ["disputes", ip.ipId, "count"],
+    queryFn: async () => {
+      const count = await getDisputesForIP(ip.ipId, true);
+      return count;
+    },
+    enabled: !!ip.ipId,
+  });
 
   // Get media type icon
   const getMediaTypeIcon = (mediaType: string) => {
@@ -126,7 +118,7 @@ export default function IPStats({ ip }: IPStatsProps) {
       stats: [
         {
           label: "Raised",
-          value: disputeCount !== null ? disputeCount : 0,
+          value: disputeCount,
           icon: <AlertTriangle className="h-3 w-3 text-accentOrange" />,
           loading: isLoadingDisputes,
         },
