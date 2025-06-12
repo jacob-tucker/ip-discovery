@@ -73,7 +73,7 @@ export default function Home() {
 
               {/* Featured IP Preview */}
               {!isLoading && ipAssets[0] && (
-                <div className="lg:flex-1 w-full max-w-md">
+                <div className="hidden lg:flex lg:flex-1 w-full max-w-md">
                   <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-accentOrange via-pink-500 to-accentPurple rounded-2xl blur-lg opacity-25 group-hover:opacity-40 transition duration-500"></div>
                     <div className="relative p-1 bg-gradient-to-r from-accentOrange/10 via-pink-500/10 to-accentPurple/10 rounded-2xl">
