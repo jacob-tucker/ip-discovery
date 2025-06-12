@@ -203,7 +203,7 @@ export default function IPRoyalties({ ip }: IPRoyaltiesProps) {
           >
             {showAll
               ? "Show Less"
-              : `View All Royalty Payments (${allRoyaltyPayments.length})`}
+              : `View Recent Royalty Payments (${allRoyaltyPayments.length})`}
             <ChevronRight
               className={`h-3 w-3 ml-1 transition-transform ${
                 showAll ? "rotate-90" : ""
