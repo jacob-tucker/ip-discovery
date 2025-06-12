@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { IPAsset } from "@/types/ip";
+import { useRouter } from "next/navigation";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -21,8 +22,15 @@ export default function SearchBar({
   const [query, setQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchResults, setSearchResults] = useState<IPAsset[]>([]);
+  const [isIpId, setIsIpId] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const router = useRouter();
+
+  // Function to check if string is a valid Ethereum address (ipId)
+  const isValidIpId = (str: string) => {
+    return /^0x[a-fA-F0-9]{40}$/.test(str);
+  };
 
   // Fetch all featured IP assets for search
   const { data: ipAssets = [] } = useQuery<IPAsset[]>({
@@ -40,7 +48,10 @@ export default function SearchBar({
   // Filter results for suggestions only
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (query.length > 0) {
+      const isIpIdInput = isValidIpId(query);
+      setIsIpId(isIpIdInput);
+
+      if (!isIpIdInput && query.length > 0) {
         const filteredResults = ipAssets
           .filter(
             (item) =>
@@ -83,6 +94,13 @@ export default function SearchBar({
     // We don't pass the query to onSearch anymore to prevent filtering
   };
 
+  // Handle IP ID search
+  const handleIpIdSearch = () => {
+    if (isIpId) {
+      router.push(`/ip/${encodeURIComponent(query)}`);
+    }
+  };
+
   return (
     <div ref={searchRef} className={`relative ${className}`}>
       <div
@@ -122,8 +140,13 @@ export default function SearchBar({
           onChange={(e) => {
             handleSearch(e.target.value);
           }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && isIpId) {
+              handleIpIdSearch();
+            }
+          }}
           onFocus={() => setIsSearchFocused(true)}
-          placeholder="Search IP Assets..."
+          placeholder="Search IP name or ipId..."
           className={`
             w-full py-2.5 pl-2 pr-4 text-sm bg-transparent 
             border-0 border-none outline-none ring-0
@@ -151,75 +174,103 @@ export default function SearchBar({
             <X className="h-3 w-3" />
           </button>
         )}
+
+        {isIpId && (
+          <button
+            onClick={handleIpIdSearch}
+            className="mr-3 text-accentOrange hover:text-accentOrange/80 transition-colors"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      {/* Search Results Dropdown */}
-      {showResults && isSearchFocused && searchResults.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 py-2 bg-background rounded-md shadow-lg border border-border/20 z-50 animate-in fade-in-50 duration-150">
-          <div className="flex items-center justify-between px-3 pb-1">
-            <div className="text-xs text-textMuted uppercase tracking-wider">
-              Results
+      {/* IP ID Detection Message */}
+      {isIpId && isSearchFocused && (
+        <div
+          onClick={handleIpIdSearch}
+          className="absolute top-full left-0 right-0 mt-1 py-2 px-3 bg-background rounded-md shadow-lg border border-border/20 z-50 animate-in fade-in-50 duration-150 cursor-pointer hover:bg-cardBg group transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-accentOrange">IP ID detected</div>
+            <div className="text-xs bg-accentOrange/10 text-accentOrange px-2 py-1 rounded-full group-hover:bg-accentOrange/20 transition-colors">
+              View IP →
             </div>
-            {query && (
-              <div className="text-xs bg-accentOrange/10 text-accentOrange px-1.5 py-0.5 rounded-full">
-                {searchResults.length}
-              </div>
-            )}
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {searchResults.map((result) => (
-              <Link
-                href={`/ip/${encodeURIComponent(result.ipId)}`}
-                key={result.ipId}
-                className="flex items-center px-3 py-2 hover:bg-cardBg transition-colors cursor-pointer"
-                onClick={() => {
-                  setQuery("");
-                  setIsSearchFocused(false);
-                  onSearch("");
-                }}
-              >
-                <div className="relative h-10 w-10 overflow-hidden rounded bg-background mr-3">
-                  {imageErrors[result.ipId] ? (
-                    <div className="h-10 w-10 flex items-center justify-center bg-cardBg">
-                      <Image
-                        src="/placeholder-image.png"
-                        alt="Placeholder"
-                        width={40}
-                        height={40}
-                        className="object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <Image
-                      src={result.image || "/placeholder-image.png"}
-                      alt={result.title}
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                      onError={() => handleImageError(result.ipId)}
-                      unoptimized={true}
-                    />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">
-                    {result.title}
-                  </div>
-                  <div className="text-xs text-textMuted truncate">
-                    {result.description}
-                  </div>
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
       )}
+
+      {/* Search Results Dropdown */}
+      {showResults &&
+        isSearchFocused &&
+        searchResults.length > 0 &&
+        !isIpId && (
+          <div className="absolute top-full left-0 right-0 mt-1 py-2 bg-background rounded-md shadow-lg border border-border/20 z-50 animate-in fade-in-50 duration-150">
+            <div className="flex items-center justify-between px-3 pb-1">
+              <div className="text-xs text-textMuted uppercase tracking-wider">
+                Results
+              </div>
+              {query && (
+                <div className="text-xs bg-accentOrange/10 text-accentOrange px-1.5 py-0.5 rounded-full">
+                  {searchResults.length}
+                </div>
+              )}
+            </div>
+            <div className="max-h-80 overflow-y-auto">
+              {searchResults.map((result) => (
+                <Link
+                  href={`/ip/${encodeURIComponent(result.ipId)}`}
+                  key={result.ipId}
+                  className="flex items-center px-3 py-2 hover:bg-cardBg transition-colors cursor-pointer"
+                  onClick={() => {
+                    setQuery("");
+                    setIsSearchFocused(false);
+                    onSearch("");
+                  }}
+                >
+                  <div className="relative h-10 w-10 overflow-hidden rounded bg-background mr-3">
+                    {imageErrors[result.ipId] ? (
+                      <div className="h-10 w-10 flex items-center justify-center bg-cardBg">
+                        <Image
+                          src="/placeholder-image.png"
+                          alt="Placeholder"
+                          width={40}
+                          height={40}
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <Image
+                        src={result.image || "/placeholder-image.png"}
+                        alt={result.title}
+                        fill
+                        sizes="40px"
+                        className="object-cover"
+                        onError={() => handleImageError(result.ipId)}
+                        unoptimized={true}
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {result.title}
+                    </div>
+                    <div className="text-xs text-textMuted truncate">
+                      {result.description}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
       {/* No Results */}
       {showResults &&
         isSearchFocused &&
         query &&
-        searchResults.length === 0 && (
+        searchResults.length === 0 &&
+        !isIpId && (
           <div className="absolute top-full left-0 right-0 mt-1 py-3 bg-background rounded-md shadow-lg border border-border/20 z-50 animate-in fade-in-50 duration-150">
             <div className="text-center text-sm text-textMuted">
               No results found
