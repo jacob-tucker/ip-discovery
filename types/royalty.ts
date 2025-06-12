@@ -6,5 +6,4 @@ export interface RoyaltyPayment {
   usdAmount: number;
   timestamp: number;
   blockNumber: number;
-  transactionHash: string;
 }

@@ -84,7 +84,6 @@ async function fetchRoyaltyPaymentsFromStory(
         usdAmount: amountInIP * tokenPrice, // Calculate USD value using current price
         timestamp: timestamp,
         blockNumber: parseInt(payment.blockNumber),
-        transactionHash: payment.id.split("-")[0], // Often transaction hash is part of the ID
       };
     });
 

@@ -210,13 +210,13 @@ export default function RoyaltyPayments({
                   </div>
 
                   <Link
-                    href={`https://storyscan.io/tx/${payment.transactionHash}`}
+                    href={`https://storyscan.io/block/${payment.blockNumber}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title={`View transaction ${payment.transactionHash}`}
+                    title={`View block ${payment.blockNumber}`}
                     className="flex items-center text-accentGreen/70 hover:text-accentGreen transition-colors"
                   >
-                    <span className="text-xs mr-1">View Tx</span>
+                    <span className="text-xs mr-1">View Block</span>
                     <ExternalLink className="h-3 w-3" />
                   </Link>
                 </div>
