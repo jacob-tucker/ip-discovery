@@ -6,7 +6,7 @@ import { IPAsset } from "@/types/ip";
 import { motion } from "framer-motion";
 import { Calendar, User, Music, Video, Image as ImageIcon } from "lucide-react";
 import { useState } from "react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatMediaType } from "@/lib/utils";
 
 interface IPCardProps {
   ip: IPAsset;
@@ -21,8 +21,9 @@ export default function IPCard({ ip }: IPCardProps) {
     ip.creators && ip.creators.length > 0 ? ip.creators[0] : null;
 
   // Media type handling
-  const isAudio = ip.mediaType?.startsWith("audio/");
-  const isVideo = ip.mediaType?.startsWith("video/");
+  const mediaTypeInfo = formatMediaType(ip.mediaType);
+  const isAudio = mediaTypeInfo.type === "AUDIO";
+  const isVideo = mediaTypeInfo.type === "VIDEO";
 
   // Get media type icon
   const getMediaTypeIcon = () => {
@@ -36,10 +37,11 @@ export default function IPCard({ ip }: IPCardProps) {
   };
 
   // Format media type for display
-  const formatMediaType = (mediaType: string) => {
-    if (!mediaType) return "IMAGE";
-    const [, format] = mediaType.split("/");
-    return format ? format.toUpperCase() : "IMAGE";
+  const getDisplayMediaType = () => {
+    if (mediaTypeInfo.format) {
+      return `${mediaTypeInfo.type} • ${mediaTypeInfo.format}`;
+    }
+    return mediaTypeInfo.type;
   };
 
   return (
@@ -99,9 +101,7 @@ export default function IPCard({ ip }: IPCardProps) {
               <div className="flex items-center mb-1.5">
                 <div className="inline-flex items-center bg-background px-1.5 py-0.5 rounded text-[10px] font-medium border border-border/30">
                   {getMediaTypeIcon()}
-                  <span className="ml-1 truncate">
-                    {formatMediaType(ip.mediaType)}
-                  </span>
+                  <span className="ml-1 truncate">{getDisplayMediaType()}</span>
                 </div>
               </div>
 

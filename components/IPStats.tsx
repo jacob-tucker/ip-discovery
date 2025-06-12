@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { IPAsset } from "@/types/ip";
 import { getAssetDataFromStory, getDisputesForIP } from "@/lib/data";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatMediaType } from "@/lib/utils";
 
 interface IPStatsProps {
   ip: IPAsset;
@@ -70,21 +70,25 @@ export default function IPStats({ ip }: IPStatsProps) {
     fetchDisputeData();
   }, [ip.ipId]);
 
-  // Format media type for display
-  const formatMediaType = (mediaType: string) => {
-    const [type, format] = mediaType.split("/");
-    return `${format.toUpperCase()}`;
-  };
-
   // Get media type icon
   const getMediaTypeIcon = (mediaType: string) => {
-    if (mediaType.startsWith("audio/")) {
+    const { type } = formatMediaType(mediaType);
+    if (type === "AUDIO") {
       return <Music className="h-3 w-3 text-accentOrange" />;
-    } else if (mediaType.startsWith("video/")) {
+    } else if (type === "VIDEO") {
       return <Video className="h-3 w-3 text-accentGreen" />;
     } else {
       return <ImageIcon className="h-3 w-3 text-accentPurple" />;
     }
+  };
+
+  // Format media type for display
+  const getDisplayMediaType = (mediaType: string) => {
+    const { type, format } = formatMediaType(mediaType);
+    if (format) {
+      return `${type} • ${format}`;
+    }
+    return type;
   };
 
   // Group stats into categories for better organization
@@ -100,7 +104,7 @@ export default function IPStats({ ip }: IPStatsProps) {
         },
         {
           label: "Media Type",
-          value: formatMediaType(ip.mediaType),
+          value: getDisplayMediaType(ip.mediaType),
           icon: getMediaTypeIcon(ip.mediaType),
           loading: false,
         },

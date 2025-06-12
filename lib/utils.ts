@@ -24,3 +24,31 @@ export function formatDate(timestamp: string) {
     return "Date unavailable";
   }
 }
+
+export interface FormattedMediaType {
+  type: string;
+  format: string | null;
+}
+
+export function formatMediaType(
+  mediaType: string | undefined
+): FormattedMediaType {
+  if (!mediaType) {
+    return { type: "IMAGE", format: null };
+  }
+
+  // If there's no slash, the whole string is the type
+  if (!mediaType.includes("/")) {
+    return {
+      type: mediaType.toUpperCase(),
+      format: null,
+    };
+  }
+
+  // Split into type and format
+  const [type, format] = mediaType.split("/");
+  return {
+    type: type.toUpperCase(),
+    format: format ? format.toUpperCase() : null,
+  };
+}
