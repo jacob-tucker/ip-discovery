@@ -18,6 +18,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 12px;
   width: 12px;
   border-radius: 50%;
+  transform: translateY(15%);
 }
 
 /* Firefox */
@@ -27,6 +28,7 @@ input[type="range"]::-moz-range-thumb {
   width: 12px;
   border: none;
   border-radius: 50%;
+  transform: translateY(15%);
 }
 
 /* Focus styles */

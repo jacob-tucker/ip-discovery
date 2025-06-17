@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import WaveformPlaceholder from "./WaveformPlaceholder";
+import { Music } from "lucide-react";
 
 interface MediaRendererProps {
   mediaUrl: string;
@@ -49,7 +49,11 @@ export default function MediaRenderer({
             </div>
           </div>
         ) : (
-          <WaveformPlaceholder className="w-full h-full" />
+          <div className="w-full h-full flex items-center justify-center bg-background">
+            <div className="rounded-full bg-black/5 p-4">
+              <Music className="h-8 w-8 text-accentOrange" />
+            </div>
+          </div>
         )}
       </div>
     );

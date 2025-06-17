@@ -9,6 +9,7 @@ import SearchBar from "@/components/SearchBar";
 import Footer from "@/components/Footer";
 import RoyaltyPayments from "@/components/RoyaltyPayments";
 import { IPAsset } from "@/types/ip";
+import MediaRenderer from "@/components/MediaRenderer";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,10 +80,11 @@ export default function Home() {
                     <div className="relative p-1 bg-gradient-to-r from-accentOrange/10 via-pink-500/10 to-accentPurple/10 rounded-2xl">
                       <div className="bg-cardBg rounded-xl overflow-hidden">
                         <div className="aspect-[4/3] relative">
-                          <img
-                            src={ipAssets[0].image || "/placeholder-image.png"}
-                            alt="Featured IP"
-                            className="w-full h-full object-cover"
+                          <MediaRenderer
+                            mediaUrl={ipAssets[0].mediaUrl}
+                            mediaType={ipAssets[0].mediaType}
+                            title={ipAssets[0].title}
+                            fallbackImageUrl={ipAssets[0].image}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                           <div className="absolute bottom-0 left-0 right-0 p-4">
