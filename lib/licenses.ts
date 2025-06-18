@@ -4,8 +4,8 @@ import { formatEther } from "viem";
 import { getBaseUrl } from "./data";
 
 /**
- * Get license data from Story Protocol API
- * @param ipId Story Protocol IP ID
+ * Get license data from Story API
+ * @param ipId Story IP ID
  * @returns Array of detailed license terms
  */
 export async function getIPLicensesFromStory(

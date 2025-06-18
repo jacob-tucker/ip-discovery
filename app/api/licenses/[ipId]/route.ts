@@ -38,7 +38,7 @@ export async function GET(
   const ipId = resolvedParams.ipId;
 
   try {
-    // Fetch licenses from Story Protocol API
+    // Fetch licenses from Story API
     const licenses = await getIPLicensesFromStory(ipId);
 
     if (!licenses || licenses.length === 0) {
@@ -105,7 +105,7 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching licenses from Story:", error);
     return NextResponse.json(
-      { error: "Failed to fetch licenses from Story Protocol" },
+      { error: "Failed to fetch licenses from Story" },
       { status: 500 }
     );
   }

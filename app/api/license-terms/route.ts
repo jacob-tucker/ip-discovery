@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    // Proxy the request to Story Protocol
+    // Proxy the request to Story
     const response = await fetch(
       "https://api.storyapis.com/api/v3/detailed-ip-license-terms",
       {
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error proxying license terms request:", error);
     return NextResponse.json(
-      { error: "Failed to fetch license terms from Story Protocol" },
+      { error: "Failed to fetch license terms from Story" },
       { status: 500 }
     );
   }

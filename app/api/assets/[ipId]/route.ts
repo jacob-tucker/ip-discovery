@@ -12,7 +12,7 @@ export async function GET(
   const ipId = resolvedParams.ipId;
 
   try {
-    // Fetch asset data from Story Protocol API
+    // Fetch asset data from Story API
     const response = await fetch(
       `https://api.storyapis.com/api/v3/assets/${ipId}`,
       {
@@ -36,7 +36,7 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching asset data from Story:", error);
     return NextResponse.json(
-      { error: "Failed to fetch asset data from Story Protocol" },
+      { error: "Failed to fetch asset data from Story" },
       { status: 500 }
     );
   }

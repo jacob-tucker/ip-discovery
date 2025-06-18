@@ -1,5 +1,5 @@
 /**
- * Utility module for managing Story Protocol token prices
+ * Utility module for managing Story token prices
  * Uses StoryScan API to fetch real-time price data
  */
 

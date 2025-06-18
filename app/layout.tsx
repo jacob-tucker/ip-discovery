@@ -26,7 +26,7 @@ export default function RootLayout({
         <title>IP on Top</title>
         <meta
           name="description"
-          content="Discover curated Intellectual Property Assets on Story Protocol."
+          content="Discover curated Intellectual Property Assets on Story."
         />
       </head>
       <body className={`${inter.variable} antialiased`}>

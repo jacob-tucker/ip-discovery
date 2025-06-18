@@ -10,7 +10,7 @@ export const getBaseUrl = (): string => {
 };
 
 /**
- * Get detailed asset data from Story Protocol API, including derivative counts
+ * Get detailed asset data from Story API, including derivative counts
  */
 export const getAssetDataFromStory = async (
   ipId: string

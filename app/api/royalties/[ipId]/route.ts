@@ -23,7 +23,7 @@ export async function GET(
   } catch (error) {
     console.error("Error fetching royalty payments:", error);
     return NextResponse.json(
-      { error: "Failed to fetch royalty payments from Story Protocol" },
+      { error: "Failed to fetch royalty payments from Story" },
       { status: 500 }
     );
   }

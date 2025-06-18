@@ -1,10 +1,10 @@
 # IP Discovery Platform
 
-A platform for discovering intellectual property assets on the Story Protocol blockchain.
+A platform for discovering intellectual property assets on the Story blockchain.
 
 ## Overview
 
-IP Discovery is a platform that allows users to browse and search through a curated list of IP assets registered on the Story Protocol blockchain. The platform provides detailed information about each asset, including its creators, tags, and links to the original content on IPFS.
+IP Discovery is a platform that allows users to browse and search through a curated list of IP assets registered on the Story blockchain. The platform provides detailed information about each asset, including its creators, tags, and links to the original content on IPFS.
 
 ## Features
 
@@ -34,7 +34,7 @@ IP Discovery is a platform that allows users to browse and search through a cura
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/ip-discovery.git
+git clone https://github.com/jacob-tucker/ip-discovery.git
 cd ip-discovery
 ```
 
@@ -46,7 +46,11 @@ npm install
 yarn install
 ```
 
-3. Start the development server:
+3. Add env variables:
+
+Rename .env.example to .env and add an API key found here: https://docs.story.foundation/api-reference/protocol/introduction
+
+4. Start the development server:
 
 ```bash
 npm run dev
@@ -54,7 +58,7 @@ npm run dev
 yarn dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
 ## Project Structure
 
@@ -64,11 +68,11 @@ yarn dev
 - `types/` - TypeScript types
 - `data/` - Mock data for development
 
-## About Story Protocol
+## About Story
 
-Story Protocol is an open standard and protocol for defining the attribution and usage permissions of intellectual property (IP), similar to how the Internet Protocol (IP) standardized the transmission of data packets.
+Story is an open standard and protocol for defining the attribution and usage permissions of intellectual property (IP), similar to how the Internet Protocol (IP) standardized the transmission of data packets.
 
-By leveraging blockchain technology, Story Protocol ensures transparent and immutable records of IP ownership and usage rights, creating new opportunities for creators in the digital economy.
+By leveraging blockchain technology, Story ensures transparent and immutable records of IP ownership and usage rights, creating new opportunities for creators in the digital economy.
 
 ## License
 
