@@ -10,6 +10,7 @@ export const featuredIPIds =
         "0x0a0466c312687027E2BEa065d4Cca0DCEC19bb2C", // Globkin
         "0x1dE1AE9a79C0331b3AA4d2639E91A50322552853", // Emergence
         "0xCdF104e4F24d593E16B9F6c382cEB1FB5573EEDd", // Mimboku
+        "0xbb1c9F511B6E287AD2381f9e546d41B5111F2454", // Pizza DAO Mascot
         "0x42A351E005De1330DeDe69Ca4Ae1B06715a2f4fA", // WTF
         "0x72ddE1d03Ad3104878Bdb5E40e70a438697d0393", // Mushy
       ];
