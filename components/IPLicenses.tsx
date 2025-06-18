@@ -15,6 +15,7 @@ import {
   FileText,
   Globe,
   Cpu,
+  Info,
 } from "lucide-react";
 import { IPAsset } from "@/types/ip";
 import { DetailedLicenseTerms } from "@/types/license";
@@ -23,6 +24,7 @@ import { formatExpiration } from "@/lib/licenses";
 import { formatUSD } from "@/lib/tokenPrice";
 import { formatEther } from "viem";
 import { LicenseTermsModal } from "@/components/modals/LicenseTermsModal";
+import { LicenseOverridesModal } from "@/components/modals/LicenseOverridesModal";
 
 interface IPLicensesProps {
   ip: IPAsset;
@@ -35,6 +37,9 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
   const [licenses, setLicenses] = useState<DetailedLicenseTerms[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isOverridesModalOpen, setIsOverridesModalOpen] = useState(false);
+  const [selectedOverridesLicense, setSelectedOverridesLicense] =
+    useState<DetailedLicenseTerms | null>(null);
 
   // Fetch real license data for the IP
   useEffect(() => {
@@ -142,7 +147,7 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
               selectedLicense === license
                 ? "border-accentPurple"
                 : "border-border"
-            }`}
+            } ${license.disabled ? "opacity-60" : ""}`}
           >
             <div
               className={`p-2 flex items-center justify-between cursor-pointer ${
@@ -150,22 +155,34 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                   ? "bg-accentPurple/5"
                   : "bg-background"
               }`}
-              onClick={() => handleLicenseSelect(license.id)}
+              onClick={() =>
+                !license.disabled && handleLicenseSelect(license.id)
+              }
             >
               <div className="flex items-center">
                 <div
                   className={`h-4 w-4 rounded-full flex items-center justify-center mr-2 ${
                     selectedLicense === license
                       ? "bg-accentPurple text-white"
-                      : "border border-border"
+                      : license.disabled
+                        ? "bg-gray-300"
+                        : "border border-border"
                   }`}
                 >
                   {selectedLicense === license && (
                     <CheckCircle2 className="h-3 w-3" />
                   )}
+                  {license.disabled && <X className="h-3 w-3 text-gray-500" />}
                 </div>
                 <div>
-                  <p className="text-xs font-medium">{license.displayName}</p>
+                  <div className="flex items-center gap-1">
+                    <p className="text-xs font-medium">{license.displayName}</p>
+                    {license.disabled && (
+                      <span className="text-[10px] text-gray-500">
+                        (Disabled)
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-textMuted">
                     {license.description}
                   </p>
@@ -174,7 +191,15 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
               <div className="flex items-center">
                 <div className="text-right mr-3">
                   <p className="text-xs font-medium">
-                    {formatMintingFee(license.terms.defaultMintingFee)} $IP
+                    {formatMintingFee(license.effectiveTerms.defaultMintingFee)}{" "}
+                    $IP
+                    {license.hasOverrides &&
+                      license.effectiveTerms.defaultMintingFee !==
+                        license.terms.defaultMintingFee && (
+                        <span className="text-[10px] text-accentPurple ml-1">
+                          *
+                        </span>
+                      )}
                   </p>
                   <p className="text-xs text-textMuted">
                     (~{formatUSD(license.usdPrice || 0)})
@@ -224,11 +249,23 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                         }
                         positive={license.terms.commercialUse}
                       />
-                      <LicenseTermItem
-                        label="Revenue Share"
-                        value={formatRevShare(license.terms.commercialRevShare)}
-                        neutral
-                      />
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-textMuted">
+                          Revenue Share:
+                        </span>
+                        <span className="text-xs font-medium text-textPrimary">
+                          {formatRevShare(
+                            license.effectiveTerms.commercialRevShare
+                          )}
+                          {license.hasOverrides &&
+                            license.effectiveTerms.commercialRevShare !==
+                              license.terms.commercialRevShare && (
+                              <span className="text-[10px] text-accentPurple ml-1">
+                                *
+                              </span>
+                            )}
+                        </span>
+                      </div>
                       <LicenseTermItem
                         label="Expiration"
                         value={formatExpiration(license.terms.expiration)}
@@ -351,40 +388,65 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                           </div>
                         )}
                     </div>
-
-                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50">
-                      <button
-                        className="text-xs text-accentPurple flex items-center hover:underline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Open the modal with the license details
-                          setSelectedLicense(license);
-                          setIsModalOpen(true);
-                        }}
-                      >
-                        <FileText className="h-3 w-3 mr-1" />
-                        View Full Terms
-                      </button>
-
-                      <button
-                        className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${
-                          selectedLicense === license
-                            ? "bg-accentPurple text-white"
-                            : "bg-gray-200 text-textMuted cursor-not-allowed"
-                        }`}
-                        disabled={selectedLicense !== license}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (selectedLicense === license) {
-                            mintLicense(license.id);
-                          }
-                        }}
-                      >
-                        <DollarSign className="h-3 w-3 mr-1" />
-                        Mint License
-                      </button>
-                    </div>
                   </div>
+
+                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50 px-2">
+                    <button
+                      className="text-xs text-accentPurple flex items-center hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedLicense(license);
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      <FileText className="h-3 w-3 mr-1" />
+                      View Full Terms
+                    </button>
+
+                    <button
+                      className={`px-3 py-1 rounded-full text-xs font-medium flex items-center ${
+                        selectedLicense === license
+                          ? "bg-accentPurple text-white"
+                          : "bg-gray-200 text-textMuted cursor-not-allowed"
+                      }`}
+                      disabled={selectedLicense !== license}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (selectedLicense === license) {
+                          mintLicense(license.id);
+                        }
+                      }}
+                    >
+                      <DollarSign className="h-3 w-3 mr-1" />
+                      Mint License
+                    </button>
+                  </div>
+
+                  {/* Add info about overrides if present */}
+                  {license.hasOverrides && (
+                    <div
+                      className="mt-2 pt-2 border-t border-border/50 flex items-start gap-2 cursor-pointer hover:bg-background/80 p-2 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedOverridesLicense(license);
+                        setIsOverridesModalOpen(true);
+                      }}
+                    >
+                      <div className="flex-shrink-0 mt-0.5">
+                        <Info className="h-3 w-3 text-accentPurple" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-textMuted">
+                          Values marked with{" "}
+                          <span className="text-accentPurple">*</span> have been
+                          modified by the IP owner.{" "}
+                          <span className="text-accentPurple hover:underline">
+                            Click to view original values
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -397,6 +459,14 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
           open={isModalOpen}
           onOpenChange={setIsModalOpen}
           license={selectedLicense}
+        />
+      )}
+
+      {selectedOverridesLicense && (
+        <LicenseOverridesModal
+          open={isOverridesModalOpen}
+          onOpenChange={setIsOverridesModalOpen}
+          license={selectedOverridesLicense}
         />
       )}
     </div>

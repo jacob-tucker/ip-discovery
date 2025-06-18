@@ -41,15 +41,55 @@ export async function getIPLicensesFromStory(
     // Enrich licenses with display names and descriptions
     const enrichedLicenses = await Promise.all(
       data.data.map(async (license: DetailedLicenseTerms) => {
-        // Convert defaultMintingFee from wei to tokens for USD calculation
+        // Store original values
+        const originalTerms = {
+          defaultMintingFee: license.terms.defaultMintingFee,
+          commercialRevShare: license.terms.commercialRevShare,
+        };
+
+        // Check for licensing config overrides
+        let effectiveMintingFee = license.terms.defaultMintingFee;
+        let effectiveRevShare = license.terms.commercialRevShare;
+        let hasOverrides = false;
+
+        if (license.licensingConfig?.isSet) {
+          const configMintingFee = Number(license.licensingConfig.mintingFee);
+          // Only override minting fee if it's different
+          if (configMintingFee !== license.terms.defaultMintingFee) {
+            effectiveMintingFee = configMintingFee;
+            hasOverrides = true;
+          }
+
+          // Only override rev share if it's greater than 0 and different from original
+          if (
+            license.licensingConfig.commercialRevShare > 0 &&
+            license.licensingConfig.commercialRevShare !==
+              license.terms.commercialRevShare
+          ) {
+            effectiveRevShare = license.licensingConfig.commercialRevShare;
+            hasOverrides = true;
+          }
+        }
+
+        // Convert effectiveMintingFee from wei to tokens for USD calculation
         const tokenAmount = Number(
-          formatEther(BigInt(license.terms.defaultMintingFee || 0))
+          formatEther(BigInt(effectiveMintingFee || 0))
         );
 
         return {
           ...license,
           ...getLicenseDisplayInfo(license.terms),
-          // Calculate USD price based on token amount
+          // Keep original terms intact
+          terms: {
+            ...license.terms,
+          },
+          // Store effective values separately
+          effectiveTerms: {
+            defaultMintingFee: effectiveMintingFee,
+            commercialRevShare: effectiveRevShare,
+          },
+          originalTerms: hasOverrides ? originalTerms : undefined,
+          hasOverrides,
           usdPrice: tokenAmount * (await getTokenPrice()),
         };
       })

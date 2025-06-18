@@ -40,6 +40,17 @@ export interface OffchainTerms {
   PILUri: string;
 }
 
+export interface LicensingConfig {
+  isSet: boolean;
+  mintingFee: string;
+  licensingHook: string;
+  hookData: string;
+  commercialRevShare: number;
+  disabled: boolean;
+  expectMinimumGroupRewardShare: number;
+  expectGroupRewardPool: string;
+}
+
 export interface DetailedLicenseTerms {
   disabled: boolean;
   id: string;
@@ -47,11 +58,25 @@ export interface DetailedLicenseTerms {
   licenseTemplate: LicenseTemplateInfo;
   licenseTemplateId: string;
   terms: LicenseTerms;
+  licensingConfig?: LicensingConfig;
 
   // Additional fields we add for the UI
   usdPrice?: number;
   displayName?: string;
   description?: string;
+  hasOverrides?: boolean;
+
+  // Store original values when overridden
+  originalTerms?: {
+    defaultMintingFee?: number;
+    commercialRevShare?: number;
+  };
+
+  // Store effective (potentially overridden) values
+  effectiveTerms: {
+    defaultMintingFee: number;
+    commercialRevShare: number;
+  };
 
   // Off-chain terms from URI (fetched at the API layer)
   offchainTerms?: OffchainTerms;

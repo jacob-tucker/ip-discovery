@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { DetailedLicenseTerms } from "@/types/license";
 import { Badge } from "@/components/ui/badge";
+import { formatEther } from "viem";
+import { formatUSD } from "@/lib/tokenPrice";
 import {
   FileText,
   Info,
@@ -45,7 +47,7 @@ export function LicenseTermsModal({
 }: LicenseTermsModalProps) {
   if (!license) return null;
 
-  const { terms, offchainTerms } = license;
+  const { terms, offchainTerms, effectiveTerms } = license;
 
   // Format revenue share from large number to percentage
   const formatRevShare = (revShare: number): string => {
@@ -108,7 +110,7 @@ export function LicenseTermsModal({
                 <div className="space-y-2 sm:space-y-2.5">
                   <div className="flex items-center gap-2 sm:gap-2.5">
                     <div className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-                      <DollarSign className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
+                      <Globe className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" />
                     </div>
                     <div>
                       <h4 className="text-xs sm:text-xs md:text-sm font-medium">
@@ -129,7 +131,7 @@ export function LicenseTermsModal({
                         Revenue Share
                       </h4>
                       <p className="text-[10px] sm:text-[10px] md:text-xs text-gray-500">
-                        {formatRevShare(terms.commercialRevShare)}
+                        {formatRevShare(effectiveTerms.commercialRevShare)}
                         {terms.commercialRevCeiling > 0 &&
                           ` (capped at ${terms.commercialRevCeiling})`}
                       </p>
@@ -144,13 +146,17 @@ export function LicenseTermsModal({
                       <h4 className="text-xs sm:text-xs md:text-sm font-medium">
                         Minting Fee
                       </h4>
-                      <p className="text-[10px] sm:text-[10px] md:text-xs text-gray-500">
-                        {license.usdPrice
-                          ? `$${license.usdPrice}`
-                          : terms.defaultMintingFee > 0
-                            ? `${terms.defaultMintingFee} ${terms.currency}`
-                            : "No minting fee"}
-                      </p>
+                      <div className="text-[10px] sm:text-[10px] md:text-xs text-gray-500">
+                        <p>
+                          {formatEther(
+                            BigInt(effectiveTerms.defaultMintingFee || 0)
+                          )}{" "}
+                          $IP
+                          <span className="text-textMuted ml-1">
+                            ({formatUSD(license.usdPrice || 0)})
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
 
