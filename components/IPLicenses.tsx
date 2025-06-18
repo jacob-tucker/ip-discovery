@@ -390,7 +390,7 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center mt-2 pt-2 border-t border-border/50 px-2">
+                  <div className="flex justify-between items-center mt-2 py-2 border-t border-border/50 px-2">
                     <button
                       className="text-xs text-accentPurple flex items-center hover:underline"
                       onClick={(e) => {
@@ -425,7 +425,7 @@ export default function IPLicenses({ ip }: IPLicensesProps) {
                   {/* Add info about overrides if present */}
                   {license.hasOverrides && (
                     <div
-                      className="mt-2 pt-2 border-t border-border/50 flex items-start gap-2 cursor-pointer hover:bg-background/80 p-2 transition-colors"
+                      className="pt-2 border-t border-border/50 flex items-start gap-1 cursor-pointer hover:bg-background/80 px-2 py-2 transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedOverridesLicense(license);
