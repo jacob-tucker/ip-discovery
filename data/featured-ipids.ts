@@ -3,8 +3,9 @@ export const featuredIPIds =
   process.env.X_CHAIN == "story-aeneid"
     ? ["0x641E638e8FCA4d4844F509630B34c9D524d40BE5"] // Ippy
     : [
-        "0xB1D831271A68Db5c18c8F0B69327446f7C8D0A42", // Ippy
+        "0x9ec13c497A559c2082ccE0A700DE80fB546cAA8c", // Evil Larry
         "0xE8b4b3828EA3678F9BA975CBccB5D9f0c3c0cA8b", // Nub Cat
+        "0xB1D831271A68Db5c18c8F0B69327446f7C8D0A42", // Ippy
         "0xf12b7b0858268F9c726f9eea315eDfec161DA552", // Drip Drip
         "0x8c40Ef7408D6036Dca0b69E67D960dd48014cB16", // Sofamon
         "0x0a0466c312687027E2BEa065d4Cca0DCEC19bb2C", // Globkin
